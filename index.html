@@ -311,7 +311,7 @@ h4.section-head{color:var(--green);font-size:0.85rem;margin:18px 0 8px;text-tran
   <div class="score-demo">
     <div class="demo-score">
       <div class="demo-val" style="color:var(--blue)">Below Market</div>
-      <div class="demo-name">Deal Position</div>
+      <div class="demo-name">Market Position</div>
       <div class="demo-sub">4.6% under median</div>
     </div>
     <div class="demo-score" style="border:1px solid rgba(0,255,136,0.2);background:rgba(0,255,136,0.03)">
@@ -321,7 +321,7 @@ h4.section-head{color:var(--green);font-size:0.85rem;margin:18px 0 8px;text-tran
     </div>
     <div class="demo-score">
       <div class="demo-val" style="color:var(--green)">Low</div>
-      <div class="demo-name">Mechanical Risk</div>
+      <div class="demo-name">Mechanical Health</div>
       <div class="demo-sub">~8% repair probability</div>
     </div>
   </div>
@@ -412,15 +412,16 @@ function goBack(){
 document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
 
 function osColor(s){return s>=8?'var(--green)':s>=6?'var(--amber)':s>=4?'#f97316':'var(--red)'}
-function dpColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('steal')>=0||l.indexOf('well below')>=0)return'var(--green)';if(l.indexOf('below')>=0||l.indexOf('at market')>=0)return'var(--amber)';if(l.indexOf('above')>=0||l.indexOf('over')>=0)return'var(--red)';return'var(--text2)'}
+function dpColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('great')>=0||l.indexOf('good')>=0)return'var(--green)';if(l.indexOf('fair')>=0)return'var(--amber)';if(l.indexOf('high')>=0||l.indexOf('above')>=0)return'var(--red)';return'var(--text2)'}
 function mrColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('low')>=0)return'var(--green)';if(l.indexOf('moderate')>=0)return'var(--amber)';if(l.indexOf('high')>=0)return'#f97316';return'var(--red)'}
 function mrBg(l){if(!l)return'rgba(255,255,255,0.05)';l=l.toLowerCase();if(l.indexOf('low')>=0)return'rgba(74,222,128,0.15)';if(l.indexOf('moderate')>=0)return'rgba(251,191,36,0.15)';if(l.indexOf('high')>=0)return'rgba(249,115,22,0.15)';return'rgba(239,68,68,0.15)'}
 function render(d){
 var v=d.vehicle||{},a=d.analysis||{};
-var os=a.overall_score||{},dp=a.deal_position||{},mr=a.mechanical_risk||{};
-var ag=a.at_a_glance||{},ni=a.nhtsa_intel||{},wtk=a.what_to_know||{};
-var gp=a.game_plan||{},op=a.ownership_projection||{},wa=a.if_you_walk_away||{};
-var tips=a.pro_tips||[];
+var os=a.overall_score||{},mp=a.market_position||{},ms=a.mechanical_snapshot||{};
+var wm=a.what_makes_it_worth_it||{},ni=a.nhtsa_intel||{},kyc=a.know_your_car||{};
+var bv=a.before_you_visit||{},wd=a.what_to_expect_at_the_dealer||{};
+var ow=a.ownership_reality||{},ac=a.alternatives_context||{};
+var tips=a.insider_tips||[];
 var md=d.market_data||{},nd=d.nhtsa_data||{};
 var h='<button class="back-btn" onclick="goBack()">\u2190 Back</button>';
 h+='<div class="score-banner">';
@@ -432,89 +433,103 @@ h+='<div class="score-liner">'+(os.one_liner||'')+'</div>';
 if(os.confidence_level){h+='<div class="confidence-bar"><div class="conf-track"><div class="conf-fill" style="width:'+os.confidence_level+'%"></div></div><div class="conf-text">Analysis Confidence: '+os.confidence_level+'%'+(os.confidence_reason?' \u2014 '+os.confidence_reason:'')+'</div></div>'}
 h+='</div>';
 h+='<div class="score-trio">';
-h+='<div class="trio-item"><div class="trio-label">Deal Position</div><div class="trio-val" style="color:'+dpColor(dp.label)+'">'+(dp.label||'\u2014')+'</div><div class="trio-sub">'+(dp.vs_market_pct||'')+'</div></div>';
-h+='<div class="trio-item trio-main"><div class="trio-label">Overall</div><div class="trio-val" style="color:'+osColor(os.score)+'">'+(os.score||'?')+'/10</div><div class="trio-sub">'+(os.label||'')+'</div></div>';
-h+='<div class="trio-item"><div class="trio-label">Mech. Risk</div><div class="trio-val" style="color:'+mrColor(mr.label)+'">'+(mr.label||'\u2014')+'</div><div class="trio-sub">'+(mr.repair_probability||'')+'</div></div>';
+h+='<div class="trio-item"><div class="trio-label">Market</div><div class="trio-val" style="color:'+dpColor(mp.label)+'">'+(mp.label||'\u2014')+'</div><div class="trio-sub">'+(mp.vs_market_pct||'')+'</div></div>';
+h+='<div class="trio-item trio-main"><div class="trio-label">Buy Score</div><div class="trio-val" style="color:'+osColor(os.score)+'">'+(os.score||'?')+'/10</div><div class="trio-sub">'+(os.label||'')+'</div></div>';
+h+='<div class="trio-item"><div class="trio-label">Mech.</div><div class="trio-val" style="color:'+mrColor(ms.risk_level)+'">'+(ms.risk_level||'\u2014')+'</div><div class="trio-sub">'+(ms.things_to_love?ms.things_to_love.substring(0,50)+'...':'')+'</div></div>';
 h+='</div>';
-if(ag.best_thing||ag.biggest_question){h+='<div class="card"><div class="card-title"><span class="icon">\u26A1</span>At a Glance</div><div class="glance-grid">';
-h+='<div class="glance-item"><div class="glance-label">Best Thing</div><div class="glance-value">'+(ag.best_thing||'')+'</div></div>';
-h+='<div class="glance-item"><div class="glance-label">Biggest Question</div><div class="glance-value">'+(ag.biggest_question||'')+'</div></div>';
-h+='</div></div>'}
-if(dp.vs_market_pct){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCCA</span>Deal Position</div>';
-h+='<div class="deal-header"><div class="deal-label-big" style="color:'+dpColor(dp.label)+'">'+(dp.label||'')+'</div><div class="deal-pct">'+(dp.vs_market_pct||'')+'</div></div>';
-if(dp.target_range){h+='<div class="deal-target"><span class="dt-label">Target Range:</span> <span class="dt-val">'+(dp.target_range)+'</span></div>'}
-if(dp.negotiation_leverage){h+='<div class="deal-leverage"><span class="dt-label">Negotiation Leverage:</span> <span class="lev lev-'+(dp.negotiation_leverage||'').toLowerCase()+'">'+(dp.negotiation_leverage)+'</span></div>'}
-if(dp.leverage_reason){h+='<p class="sub-text">'+(dp.leverage_reason)+'</p>'}
+
+// SECTION 1: What Makes It Worth It
+if(wm.headline||wm.strengths){h+='<div class="card"><div class="card-title"><span class="icon">\u2B50</span>What Makes This Car Worth It</div>';
+if(wm.headline){h+='<div class="big-ticket" style="margin-bottom:16px;border-left-color:var(--green)">'+wm.headline+'</div>'}
+if(wm.strengths&&wm.strengths.length){wm.strengths.forEach(function(s){h+='<div class="flag-good">\u2713 '+s+'</div>'})}
+if(wm.this_one_specifically){h+='<div style="margin-top:12px;padding:12px;background:rgba(74,222,128,0.08);border-radius:8px;font-size:14px"><strong>This listing specifically:</strong> '+wm.this_one_specifically+'</div>'}
+h+='</div>'}
+
+// SECTION 2: Market Position (replaces Deal Position)
+if(mp.vs_market_pct||mp.label){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCCA</span>Market Position</div>';
+h+='<div class="deal-header"><div class="deal-label-big" style="color:'+dpColor(mp.label)+'">'+(mp.label||'')+'</div><div class="deal-pct">'+(mp.vs_market_pct||'')+'</div></div>';
+if(mp.context){h+='<p class="sub-text">'+mp.context+'</p>'}
+if(mp.fair_range){h+='<div class="deal-target"><span class="dt-label">Fair Range:</span> <span class="dt-val">'+mp.fair_range+'</span></div>'}
 if(md&&md.price_buckets&&md.price_buckets.length){h+='<div class="chart-container">';
 var mx=Math.max.apply(null,md.price_buckets.map(function(b){return b.count}));
 md.price_buckets.forEach(function(b){var pct=(b.count/mx)*100;var act=v.price>=b.min&&v.price<b.max;
 h+='<div class="chart-bar'+(act?' active':'')+'" style="height:'+Math.max(4,pct)+'%" title="$'+b.min.toLocaleString()+'-$'+b.max.toLocaleString()+': '+b.count+' cars"></div>'});
 h+='</div><div class="chart-labels"><span>$'+(md.min_price?md.min_price.toLocaleString():'?')+'</span><span>$'+(md.max_price?md.max_price.toLocaleString():'?')+'</span></div>'}
 h+='</div>'}
-if(mr.label){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDEE1\uFE0F</span>Mechanical Risk</div>';
-h+='<div class="risk-header"><span class="risk-badge" style="background:'+mrBg(mr.label)+';color:'+mrColor(mr.label)+'">'+(mr.label)+'</span>';
-if(mr.repair_probability){h+='<span class="risk-prob">'+(mr.repair_probability)+'</span>'}
-h+='</div>';
-if(mr.explanation){h+='<p class="sub-text">'+(mr.explanation)+'</p>'}
+
+// SECTION 3: Mechanical Snapshot (replaces Mechanical Risk)
+if(ms.risk_level){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDEE1\uFE0F</span>Mechanical Snapshot</div>';
+h+='<div class="risk-header"><span class="risk-badge" style="background:'+mrBg(ms.risk_level)+';color:'+mrColor(ms.risk_level)+'">'+ms.risk_level+'</span></div>';
+if(ms.outlook){h+='<p class="sub-text">'+ms.outlook+'</p>'}
+if(ms.things_to_love){h+='<div class="flag-good" style="margin-top:8px">\u2713 '+ms.things_to_love+'</div>'}
 h+='</div>'}
-if(ni.complaint_summary){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCC1</span>NHTSA Intel</div>';
-h+='<p class="sub-text">'+(ni.complaint_summary)+'</p>';
-if(ni.recall_summary){h+='<p class="sub-text" style="margin-top:10px">'+(ni.recall_summary)+'</p>'}
-(ni.key_reassurances||[]).forEach(function(r){h+='<div class="flag-good">\u2713 '+r+'</div>'});
-(ni.items_to_verify||[]).forEach(function(r){h+='<div class="flag-verify">\u25C9 '+r+'</div>'});
+
+// SECTION 4: NHTSA Intel
+if(ni.summary){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCC1</span>NHTSA Intel</div>';
+h+='<p class="sub-text">'+ni.summary+'</p>';
+if(ni.recall_status){h+='<p class="sub-text" style="margin-top:10px">'+ni.recall_status+'</p>'}
+(ni.reassurances||[]).forEach(function(r){h+='<div class="flag-good">\u2713 '+r+'</div>'});
+(ni.verify_items||[]).forEach(function(r){h+='<div class="flag-verify">\u25C9 '+r+'</div>'});
 h+='</div>'}
-if(wtk.generation_overview){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDD0D</span>What to Know</div>';
-h+='<p class="sub-text">'+(wtk.generation_overview)+'</p>';
-if(wtk.known_quirks&&wtk.known_quirks.length){h+='<h4 class="section-head">Known Quirks</h4>';
-wtk.known_quirks.forEach(function(q){h+='<div class="quirk"><div class="quirk-head"><span class="quirk-name">'+(q.item||'')+'</span><span class="sev sev-'+(q.severity||'').replace(/\s/g,'_')+'">'+(q.severity||'')+'</span></div>';
-h+='<div class="quirk-detail">'+(q.reality_check||'')+'</div><div class="quirk-action">\u2192 '+(q.what_to_do||'')+'</div></div>'})}
-if(wtk.big_ticket_watch){h+='<h4 class="section-head">Big Ticket Watch</h4><div class="big-ticket">'+(wtk.big_ticket_watch)+'</div>'}
-if(wtk.maintenance_due&&wtk.maintenance_due.length){h+='<h4 class="section-head">Maintenance Due</h4>';
-wtk.maintenance_due.forEach(function(m){h+='<div class="maint-row"><div class="maint-info"><div class="maint-svc">'+(m.service||'')+'</div><div class="maint-cost">'+(m.cost||'')+'</div><div class="maint-why">'+(m.why||'')+'</div></div>';
-h+='<span class="urg urg-'+(m.urgency||'').replace(/\s/g,'_')+'">'+(m.urgency||'')+'</span></div>'})}
+
+// SECTION 5: Know Your Car (replaces What to Know)
+if(kyc.generation_overview){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDD0D</span>Know Your Car</div>';
+h+='<p class="sub-text">'+kyc.generation_overview+'</p>';
+if(kyc.known_quirks&&kyc.known_quirks.length){h+='<h4 class="section-head">Known Quirks</h4>';
+kyc.known_quirks.forEach(function(q){h+='<div class="quirk"><div class="quirk-head"><span class="quirk-name">'+(q.item||'')+'</span><span class="sev sev-'+(q.severity||'').replace(/\s/g,'_')+'">'+(q.severity||'')+'</span></div>';
+h+='<div class="quirk-detail">'+(q.reality||'')+'</div><div class="quirk-action">\u2192 '+(q.action||'')+'</div></div>'})}
+if(kyc.big_ticket_item){h+='<h4 class="section-head">Big Ticket Item</h4><div class="big-ticket">'+kyc.big_ticket_item+'</div>'}
+if(kyc.maintenance_coming_up&&kyc.maintenance_coming_up.length){h+='<h4 class="section-head">Maintenance Coming Up</h4>';
+kyc.maintenance_coming_up.forEach(function(m){h+='<div class="maint-row"><div class="maint-info"><div class="maint-svc">'+(m.service||'')+'</div><div class="maint-cost">'+(m.cost||'')+'</div><div class="maint-why">'+(m.why||'')+'</div></div>';
+h+='<span class="urg urg-'+(m.when||'').replace(/\s/g,'_')+'">'+(m.when||'')+'</span></div>'})}
 h+='</div>'}
-if(gp.smart_questions&&gp.smart_questions.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCAC</span>Your Game Plan</div>';
-if(gp.before_you_go&&gp.before_you_go.length){h+='<h4 class="section-head">Before You Go</h4><ul class="check-list">';
-gp.before_you_go.forEach(function(b){h+='<li>'+b+'</li>'});h+='</ul>'}
+
+// SECTION 6: Before You Visit (replaces Game Plan)
+if(bv.smart_questions&&bv.smart_questions.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCAC</span>Before You Visit</div>';
+if(bv.prep_steps&&bv.prep_steps.length){h+='<h4 class="section-head">Prep Steps</h4><ul class="check-list">';
+bv.prep_steps.forEach(function(b){h+='<li>'+b+'</li>'});h+='</ul>'}
 h+='<h4 class="section-head">Questions to Ask</h4>';
-gp.smart_questions.forEach(function(q,i){h+='<div class="step"><div class="step-n">'+(i+1)+'</div><div><div class="step-q">"'+(q.ask||'')+'"</div>';
-h+='<div class="step-why">'+(q.why_this_matters||'')+'</div>';
-h+='<div class="step-sig"><span class="good">\u2713 '+(q.good_answer||'')+'</span></div>';
-h+='<div class="step-sig"><span class="warn">\u26A0 '+(q.red_flag||'')+'</span></div></div></div>'});
-if(gp.test_drive_checklist&&gp.test_drive_checklist.length){h+='<h4 class="section-head">Test Drive Checklist</h4><ul class="check-list">';
-gp.test_drive_checklist.forEach(function(t){h+='<li>'+t+'</li>'});h+='</ul>'}
+bv.smart_questions.forEach(function(q,i){h+='<div class="step"><div class="step-n">'+(i+1)+'</div><div><div class="step-q">"'+(q.ask||'')+'"</div>';
+h+='<div class="step-why">'+(q.why||'')+'</div>';
+h+='<div class="step-sig"><span class="good">\u2713 '+(q.great_sign||'')+'</span></div>';
+h+='<div class="step-sig"><span class="warn">\u26A0 '+(q.worth_digging||'')+'</span></div></div></div>'});
+if(bv.test_drive_focus&&bv.test_drive_focus.length){h+='<h4 class="section-head">Test Drive Focus</h4><ul class="check-list">';
+bv.test_drive_focus.forEach(function(t){h+='<li>'+t+'</li>'});h+='</ul>'}
 h+='</div>'}
-if(gp.opening_offer_script||gp.at_the_desk){h+='<div class="card"><div class="card-title"><span class="icon">\uD83E\uDD1D</span>At the Desk</div>';
-if(gp.opening_offer_script){h+='<h4 class="section-head">Opening Script</h4><div class="script-box">'+(gp.opening_offer_script)+'</div>'}
-if(gp.alternative_angle){h+='<h4 class="section-head">Alternative Angle</h4><div class="script-box alt">'+(gp.alternative_angle)+'</div>'}
-var desk=gp.at_the_desk;
-if(desk){if(desk.expected_otd_range){h+='<div class="otd-box"><div class="otd-price">'+(desk.expected_otd_range)+'</div><div class="otd-lbl">Expected Out-the-Door</div></div>'}
-if(desk.doc_fee_range){h+='<div class="desk-row"><span class="desk-label">Doc Fee Range:</span> '+(desk.doc_fee_range)+'</div>'}
-if(desk.dealer_margin_estimate){h+='<div class="desk-row"><span class="desk-label">Est. Dealer Margin:</span> '+(desk.dealer_margin_estimate)+'</div>'}
-if(desk.fees_to_question&&desk.fees_to_question.length){h+='<h4 class="section-head">Fees to Question</h4><ul class="fee-list">';
-desk.fees_to_question.forEach(function(f){h+='<li class="q">? '+f+'</li>'});h+='</ul>'}
-if(desk.financing_by_credit){var fc=desk.financing_by_credit;h+='<h4 class="section-head">Financing by Credit Tier</h4><div class="credit-grid">';
-if(fc.excellent_720_plus){h+='<div class="credit-item credit-excellent"><div class="credit-tier">720+</div><div class="credit-apr">'+(fc.excellent_720_plus)+'</div></div>'}
-if(fc.good_660_720){h+='<div class="credit-item credit-good"><div class="credit-tier">660-720</div><div class="credit-apr">'+(fc.good_660_720)+'</div></div>'}
-if(fc.fair_below_660){h+='<div class="credit-item credit-fair"><div class="credit-tier">&lt;660</div><div class="credit-apr">'+(fc.fair_below_660)+'</div></div>'}
-h+='</div>'}}
+
+// SECTION 7: What to Expect at the Dealer (clean, no scripts)
+if(wd.estimated_otd||wd.financing_reality){h+='<div class="card"><div class="card-title"><span class="icon">\uD83C\uDFE2</span>What to Expect at the Dealer</div>';
+if(wd.estimated_otd){h+='<div class="otd-box"><div class="otd-price">'+wd.estimated_otd+'</div><div class="otd-lbl">Estimated Out-the-Door</div></div>'}
+if(wd.typical_doc_fee){h+='<div class="desk-row"><span class="desk-label">Typical Doc Fee:</span> '+wd.typical_doc_fee+'</div>'}
+if(wd.fees_to_know_about&&wd.fees_to_know_about.length){h+='<h4 class="section-head">Fees to Know About</h4><ul class="fee-list">';
+wd.fees_to_know_about.forEach(function(f){h+='<li>'+f+'</li>'});h+='</ul>'}
+if(wd.financing_reality){var fc=wd.financing_reality;h+='<h4 class="section-head">Financing by Credit Tier</h4><div class="credit-grid">';
+if(fc.excellent_720_plus){h+='<div class="credit-item credit-excellent"><div class="credit-tier">720+</div><div class="credit-apr">'+fc.excellent_720_plus+'</div></div>'}
+if(fc.good_660_720){h+='<div class="credit-item credit-good"><div class="credit-tier">660-720</div><div class="credit-apr">'+fc.good_660_720+'</div></div>'}
+if(fc.fair_below_660){h+='<div class="credit-item credit-fair"><div class="credit-tier">&lt;660</div><div class="credit-apr">'+fc.fair_below_660+'</div></div>'}
 h+='</div>'}
-if(op.three_year_total||op.monthly_equivalent){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCB0</span>3-Year Ownership Projection</div>';
-if(op.monthly_equivalent){h+='<div class="otd-box"><div class="otd-price">'+(op.monthly_equivalent)+'</div><div class="otd-lbl">All-In Monthly Cost</div></div>'}
-if(op.breakdown){var br=op.breakdown;h+='<div class="cost-grid">';
-if(br.monthly_fuel){h+='<div class="cost-item"><div class="cost-val">'+(br.monthly_fuel)+'</div><div class="cost-lbl">Fuel</div></div>'}
-if(br.monthly_insurance){h+='<div class="cost-item"><div class="cost-val">'+(br.monthly_insurance)+'</div><div class="cost-lbl">Insurance</div></div>'}
-if(br.monthly_maintenance){h+='<div class="cost-item"><div class="cost-val">'+(br.monthly_maintenance)+'</div><div class="cost-lbl">Maintenance</div></div>'}
-if(br.monthly_depreciation){h+='<div class="cost-item"><div class="cost-val">'+(br.monthly_depreciation)+'</div><div class="cost-lbl">Depreciation</div></div>'}
 h+='</div>'}
-if(op.three_year_total){h+='<div class="desk-row"><span class="desk-label">3-Year Total:</span> '+(op.three_year_total)+'</div>'}
-if(op.first_year_maintenance_budget){h+='<p class="sub-text">'+(op.first_year_maintenance_budget)+'</p>'}
-if(op.depreciation_outlook){h+='<p class="sub-text">'+(op.depreciation_outlook)+'</p>'}
+
+// SECTION 8: Ownership Reality
+if(ow.monthly_cost_estimate||ow.breakdown){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCB0</span>Ownership Reality</div>';
+if(ow.monthly_cost_estimate){h+='<div class="otd-box"><div class="otd-price">'+ow.monthly_cost_estimate+'</div><div class="otd-lbl">All-In Monthly Cost</div></div>'}
+if(ow.breakdown){var br=ow.breakdown;h+='<div class="cost-grid">';
+if(br.fuel){h+='<div class="cost-item"><div class="cost-val">'+br.fuel+'</div><div class="cost-lbl">Fuel</div></div>'}
+if(br.insurance){h+='<div class="cost-item"><div class="cost-val">'+br.insurance+'</div><div class="cost-lbl">Insurance</div></div>'}
+if(br.maintenance){h+='<div class="cost-item"><div class="cost-val">'+br.maintenance+'</div><div class="cost-lbl">Maintenance</div></div>'}
+if(br.depreciation){h+='<div class="cost-item"><div class="cost-val">'+br.depreciation+'</div><div class="cost-lbl">Depreciation</div></div>'}
 h+='</div>'}
-if(wa.comparable_range||wa.context){h+='<div class="card walkaway"><div class="card-title"><span class="icon">\uD83D\uDEAA</span>If You Walk Away</div>';
-if(wa.comparable_range){h+='<p class="walk-range">'+(wa.comparable_range)+'</p>'}
-if(wa.context){h+='<p class="sub-text">'+(wa.context)+'</p>'}
+if(ow.year_one_maintenance){h+='<p class="sub-text">'+ow.year_one_maintenance+'</p>'}
+if(ow.value_retention){h+='<p class="sub-text">'+ow.value_retention+'</p>'}
 h+='</div>'}
+
+// SECTION 9: Alternatives Context (replaces Walk Away - positive framing)
+if(ac.market_supply||ac.worth_considering){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDD0E</span>Market Context</div>';
+if(ac.market_supply){h+='<p class="sub-text">'+ac.market_supply+'</p>'}
+if(ac.worth_considering){h+='<p class="sub-text" style="margin-top:8px">'+ac.worth_considering+'</p>'}
+h+='</div>'}
+
+// SECTION 10: Insider Tips
 if(tips&&tips.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCA1</span>Insider Tips</div>';
 tips.forEach(function(t){h+='<div class="tip">'+t+'</div>'});h+='</div>'}
 return h;
