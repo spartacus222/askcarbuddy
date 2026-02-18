@@ -388,6 +388,7 @@ async function go(){
   try{
     const r=await fetch(API+'/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
     const d=await r.json();
+    if(d.trace_id)setTraceId(d.trace_id);
     if(d.error){err.textContent=d.error;err.style.display='block';showSections()}
     else{rpt.innerHTML=render(d);rpt.style.display='block'}
   }catch(e){err.textContent='Connection failed. Please try again.';err.style.display='block';showSections()}
@@ -524,5 +525,117 @@ tips.forEach(function(t){h+='<div class="tip">'+t+'</div>'});h+='</div>'}
 return h;
 }
 </script>
+
+<script>
+// === SELF-IMPROVING AGENT: Tracking Layer ===
+var _traceId = null;
+var _sectionTimers = {};
+var _pageStart = Date.now();
+
+function setTraceId(id) {
+    _traceId = id;
+    // Inject feedback UI after report loads
+    if (id) {
+        setTimeout(injectFeedbackUI, 500);
+        startSectionTracking();
+    }
+}
+
+function sendReward(type, value, meta) {
+    if (!_traceId) return;
+    fetch("/api/reward", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({trace_id: _traceId, signal_type: type, signal_value: value, metadata: meta})
+    }).catch(function(){});
+}
+
+function sendEvent(type, section, duration, scroll, meta) {
+    if (!_traceId) return;
+    fetch("/api/event", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({trace_id: _traceId, event_type: type, section_name: section, duration_ms: duration, scroll_depth: scroll, metadata: meta})
+    }).catch(function(){});
+}
+
+function injectFeedbackUI() {
+    var rp = document.getElementById("report");
+    if (!rp) return;
+    var existing = document.getElementById("feedback-bar");
+    if (existing) existing.remove();
+    var fb = document.createElement("div");
+    fb.id = "feedback-bar";
+    fb.innerHTML = '<div class="feedback-container">'
+        + '<div class="feedback-q">Was this report helpful?</div>'
+        + '<div class="feedback-btns">'
+        + '<button class="fb-btn fb-up" onclick="voteFeedback(1,this)">\uD83D\uDC4D Yes</button>'
+        + '<button class="fb-btn fb-down" onclick="voteFeedback(-1,this)">\uD83D\uDC4E No</button>'
+        + '</div>'
+        + '<div class="feedback-thanks" id="fb-thanks" style="display:none">Thanks! This helps us improve.</div>'
+        + '</div>';
+    rp.insertBefore(fb, rp.firstChild.nextSibling);
+}
+
+function voteFeedback(val, btn) {
+    sendReward("thumbs", val);
+    document.getElementById("fb-thanks").style.display = "block";
+    var btns = document.querySelectorAll(".fb-btn");
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].style.opacity = "0.4";
+        btns[i].style.pointerEvents = "none";
+    }
+    btn.style.opacity = "1";
+    btn.style.transform = "scale(1.1)";
+}
+
+function startSectionTracking() {
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            var name = entry.target.getAttribute("data-section");
+            if (!name) {
+                var title = entry.target.querySelector(".card-title");
+                name = title ? title.textContent.trim() : "unknown";
+            }
+            if (entry.isIntersecting) {
+                _sectionTimers[name] = Date.now();
+            } else if (_sectionTimers[name]) {
+                var dur = Date.now() - _sectionTimers[name];
+                if (dur > 500) sendEvent("section_view", name, dur);
+                delete _sectionTimers[name];
+            }
+        });
+    }, {threshold: 0.3});
+
+    setTimeout(function() {
+        var cards = document.querySelectorAll(".card, .score-banner, .score-trio, .walkaway");
+        for (var i = 0; i < cards.length; i++) observer.observe(cards[i]);
+    }, 1000);
+}
+
+// Track page unload
+window.addEventListener("beforeunload", function() {
+    if (!_traceId) return;
+    var totalTime = Date.now() - _pageStart;
+    // Flush remaining section timers
+    for (var name in _sectionTimers) {
+        var dur = Date.now() - _sectionTimers[name];
+        if (dur > 500) sendEvent("section_view", name, dur);
+    }
+    sendEvent("page_unload", null, totalTime, null, {sections_viewed: Object.keys(_sectionTimers).length});
+});
+</script>
+
+<style>
+.feedback-container{background:linear-gradient(135deg,rgba(0,255,136,0.05),rgba(0,212,255,0.05));border:1px solid rgba(0,255,136,0.15);border-radius:16px;padding:20px;margin:16px 0 24px;text-align:center}
+.feedback-q{font-size:1rem;font-weight:600;margin-bottom:12px;color:#fff}
+.feedback-btns{display:flex;gap:12px;justify-content:center}
+.fb-btn{padding:10px 28px;border-radius:12px;border:1px solid #2a2a3e;background:#12121a;color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.fb-btn:hover{transform:scale(1.05)}
+.fb-up:hover{border-color:#00ff88;background:rgba(0,255,136,0.1)}
+.fb-down:hover{border-color:#ff4466;background:rgba(255,68,102,0.1)}
+.feedback-thanks{color:#00ff88;font-size:0.85rem;margin-top:10px;font-weight:500}
+</style>
+
 </body>
 </html>

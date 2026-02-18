@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AskCarBuddy v6.0 - AI Car Buying Intelligence (Smart Engine)
+AskCarBuddy v7.0 - AI Car Buying Intelligence (Smart Engine)
 =============================================================
 Paste any listing URL -> Get a REAL pro-level intelligence brief.
 
@@ -31,6 +31,13 @@ log = logging.getLogger("askcarbuddy")
 app = Flask(__name__)
 CORS(app)
 
+# Initialize trace DB on startup
+try:
+    init_trace_db()
+except Exception as e:
+    log.warning(f'Trace DB init deferred: {e}')
+
+
 AUTODEV_API_KEY   = os.getenv("AUTODEV_API_KEY", "")
 GROQ_API_KEY      = os.getenv("GROQ_API_KEY", "")
 EXA_API_KEY       = os.getenv("EXA_API_KEY", "")
@@ -44,6 +51,267 @@ GROQ_URL          = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL        = "llama-3.3-70b-versatile"
 EXA_URL           = "https://api.exa.ai/contents"
 EXA_SEARCH_URL    = "https://api.exa.ai/search"
+
+
+# ==============================================================
+# SELF-IMPROVING AGENT — PHASE 1: TRACE STORE + LEARNING LOOP
+# ==============================================================
+
+import sqlite3
+import uuid
+import threading
+
+DB_PATH = os.getenv("TRACE_DB", "askcarbuddy_traces.db")
+_db_lock = threading.Lock()
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    return conn
+
+def init_trace_db():
+    conn = get_db()
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS traces (
+            id TEXT PRIMARY KEY,
+            created_at TEXT DEFAULT (datetime('now')),
+            url TEXT,
+            vehicle_year TEXT,
+            vehicle_make TEXT,
+            vehicle_model TEXT,
+            vehicle_trim TEXT,
+            vehicle_price REAL,
+            vehicle_mileage REAL,
+            prompt_version TEXT DEFAULT 'v1',
+            scrape_time_ms REAL,
+            market_time_ms REAL,
+            nhtsa_time_ms REAL,
+            ai_time_ms REAL,
+            total_time_ms REAL,
+            groq_tokens_used INTEGER,
+            overall_score REAL,
+            deal_position TEXT,
+            mechanical_risk TEXT,
+            confidence_level REAL,
+            ai_output_json TEXT,
+            error TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS rewards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trace_id TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            signal_type TEXT NOT NULL,
+            signal_value REAL NOT NULL,
+            metadata TEXT,
+            FOREIGN KEY (trace_id) REFERENCES traces(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS prompt_versions (
+            version TEXT PRIMARY KEY,
+            created_at TEXT DEFAULT (datetime('now')),
+            system_prompt TEXT NOT NULL,
+            json_schema TEXT NOT NULL,
+            is_active INTEGER DEFAULT 0,
+            total_reports INTEGER DEFAULT 0,
+            avg_score REAL DEFAULT 0,
+            avg_thumbs_up_rate REAL DEFAULT 0,
+            avg_time_on_page REAL DEFAULT 0,
+            conversion_rate REAL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS page_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trace_id TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            event_type TEXT NOT NULL,
+            section_name TEXT,
+            duration_ms REAL,
+            scroll_depth REAL,
+            metadata TEXT,
+            FOREIGN KEY (trace_id) REFERENCES traces(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_traces_created ON traces(created_at);
+        CREATE INDEX IF NOT EXISTS idx_traces_prompt ON traces(prompt_version);
+        CREATE INDEX IF NOT EXISTS idx_rewards_trace ON rewards(trace_id);
+        CREATE INDEX IF NOT EXISTS idx_events_trace ON page_events(trace_id);
+    """)
+    conn.commit()
+    conn.close()
+    log.info("Trace DB initialized")
+
+def save_trace(trace_data):
+    trace_id = str(uuid.uuid4())[:12]
+    with _db_lock:
+        conn = get_db()
+        conn.execute("""
+            INSERT INTO traces (id, url, vehicle_year, vehicle_make, vehicle_model, vehicle_trim,
+                vehicle_price, vehicle_mileage, prompt_version, scrape_time_ms, market_time_ms,
+                nhtsa_time_ms, ai_time_ms, total_time_ms, groq_tokens_used, overall_score,
+                deal_position, mechanical_risk, confidence_level, ai_output_json, error)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            trace_id,
+            trace_data.get("url", ""),
+            trace_data.get("year", ""),
+            trace_data.get("make", ""),
+            trace_data.get("model", ""),
+            trace_data.get("trim", ""),
+            trace_data.get("price"),
+            trace_data.get("mileage"),
+            trace_data.get("prompt_version", "v1"),
+            trace_data.get("scrape_time_ms"),
+            trace_data.get("market_time_ms"),
+            trace_data.get("nhtsa_time_ms"),
+            trace_data.get("ai_time_ms"),
+            trace_data.get("total_time_ms"),
+            trace_data.get("groq_tokens"),
+            trace_data.get("overall_score"),
+            trace_data.get("deal_position"),
+            trace_data.get("mechanical_risk"),
+            trace_data.get("confidence_level"),
+            trace_data.get("ai_output_json"),
+            trace_data.get("error")
+        ))
+        conn.commit()
+        conn.close()
+    log.info(f"Trace saved: {trace_id}")
+    return trace_id
+
+def save_reward(trace_id, signal_type, signal_value, metadata=None):
+    with _db_lock:
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO rewards (trace_id, signal_type, signal_value, metadata) VALUES (?,?,?,?)",
+            (trace_id, signal_type, signal_value, json.dumps(metadata) if metadata else None)
+        )
+        conn.commit()
+        conn.close()
+    log.info(f"Reward saved: {trace_id} | {signal_type}={signal_value}")
+
+def save_page_event(trace_id, event_type, section_name=None, duration_ms=None, scroll_depth=None, metadata=None):
+    with _db_lock:
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO page_events (trace_id, event_type, section_name, duration_ms, scroll_depth, metadata) VALUES (?,?,?,?,?,?)",
+            (trace_id, event_type, section_name, duration_ms, scroll_depth, json.dumps(metadata) if metadata else None)
+        )
+        conn.commit()
+        conn.close()
+
+def get_learning_stats():
+    conn = get_db()
+    stats = {}
+    stats["total_reports"] = conn.execute("SELECT COUNT(*) FROM traces WHERE error IS NULL").fetchone()[0]
+    stats["total_errors"] = conn.execute("SELECT COUNT(*) FROM traces WHERE error IS NOT NULL").fetchone()[0]
+    stats["total_rewards"] = conn.execute("SELECT COUNT(*) FROM rewards").fetchone()[0]
+    stats["avg_overall_score"] = conn.execute("SELECT AVG(overall_score) FROM traces WHERE overall_score IS NOT NULL").fetchone()[0]
+    stats["avg_total_time_ms"] = conn.execute("SELECT AVG(total_time_ms) FROM traces WHERE total_time_ms IS NOT NULL").fetchone()[0]
+
+    thumbs = conn.execute("""
+        SELECT signal_value, COUNT(*) as cnt FROM rewards 
+        WHERE signal_type='thumbs' GROUP BY signal_value
+    """).fetchall()
+    stats["thumbs_up"] = sum(r[1] for r in thumbs if r[0] > 0)
+    stats["thumbs_down"] = sum(r[1] for r in thumbs if r[0] < 0)
+
+    by_prompt = conn.execute("""
+        SELECT prompt_version, COUNT(*) as cnt, AVG(overall_score) as avg_score
+        FROM traces WHERE error IS NULL GROUP BY prompt_version
+    """).fetchall()
+    stats["by_prompt_version"] = [{"version": r[0], "count": r[1], "avg_score": round(r[2] or 0, 2)} for r in by_prompt]
+
+    popular = conn.execute("""
+        SELECT vehicle_make, vehicle_model, COUNT(*) as cnt
+        FROM traces WHERE error IS NULL
+        GROUP BY vehicle_make, vehicle_model ORDER BY cnt DESC LIMIT 10
+    """).fetchall()
+    stats["popular_vehicles"] = [{"make": r[0], "model": r[1], "count": r[2]} for r in popular]
+
+    recent = conn.execute("""
+        SELECT section_name, AVG(duration_ms) as avg_dur, COUNT(*) as cnt
+        FROM page_events WHERE event_type='section_view' AND duration_ms > 0
+        GROUP BY section_name ORDER BY avg_dur DESC
+    """).fetchall()
+    stats["section_engagement"] = [{"section": r[0], "avg_time_ms": round(r[1] or 0), "views": r[2]} for r in recent]
+
+    conn.close()
+    return stats
+
+BRAIN_DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AskCarBuddy Brain</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#e0e0e0;font-family:'Inter',system-ui,sans-serif;padding:24px}
+h1{font-size:1.8rem;margin-bottom:24px;background:linear-gradient(135deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:32px}
+.stat{background:#12121a;border:1px solid #1e1e2e;border-radius:16px;padding:24px;text-align:center}
+.stat-val{font-size:2.2rem;font-weight:800;margin:8px 0}
+.stat-label{font-size:0.78rem;text-transform:uppercase;letter-spacing:2px;color:#888}
+.green{color:#00ff88}.blue{color:#00d4ff}.amber{color:#ffaa00}.red{color:#ff4466}
+.card{background:#12121a;border:1px solid #1e1e2e;border-radius:16px;padding:24px;margin-bottom:20px}
+.card h2{font-size:1.1rem;margin-bottom:16px;color:#fff}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px;border-bottom:1px solid #1e1e2e;color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px}
+td{padding:10px;border-bottom:1px solid #0f0f18;font-size:0.9rem}
+.bar-track{height:8px;background:#1e1e2e;border-radius:4px;overflow:hidden;margin-top:4px}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.8s ease}
+.refresh-btn{background:linear-gradient(135deg,#00ff88,#00d4ff);color:#000;border:none;padding:10px 24px;border-radius:12px;font-weight:700;cursor:pointer;font-size:0.85rem;margin-bottom:24px}
+.empty{color:#555;font-style:italic;padding:20px;text-align:center}
+</style>
+</head>
+<body>
+<h1>AskCarBuddy Brain</h1>
+<button class="refresh-btn" onclick="load()">Refresh</button>
+<div class="grid" id="stats"></div>
+<div class="card"><h2>Prompt Version Performance</h2><div id="prompts"></div></div>
+<div class="card"><h2>Section Engagement</h2><div id="sections"></div></div>
+<div class="card"><h2>Popular Vehicles</h2><div id="vehicles"></div></div>
+<script>
+function load(){
+fetch("/api/learning").then(function(r){return r.json()}).then(function(d){
+var s=document.getElementById("stats");
+var tu=d.thumbs_up||0,td=d.thumbs_down||0,tpct=tu+td>0?Math.round(tu/(tu+td)*100):0;
+s.innerHTML='<div class="stat"><div class="stat-label">Total Reports</div><div class="stat-val blue">'+(d.total_reports||0)+'</div></div>'
++'<div class="stat"><div class="stat-label">Avg Score</div><div class="stat-val green">'+(d.avg_overall_score?d.avg_overall_score.toFixed(1):"--")+'</div></div>'
++'<div class="stat"><div class="stat-label">Avg Time</div><div class="stat-val amber">'+(d.avg_total_time_ms?Math.round(d.avg_total_time_ms/1000)+"s":"--")+'</div></div>'
++'<div class="stat"><div class="stat-label">Thumbs Up</div><div class="stat-val green">'+tu+'</div></div>'
++'<div class="stat"><div class="stat-label">Thumbs Down</div><div class="stat-val red">'+td+'</div></div>'
++'<div class="stat"><div class="stat-label">Approval Rate</div><div class="stat-val '+(tpct>=70?"green":tpct>=50?"amber":"red")+'">'+tpct+'%</div></div>'
++'<div class="stat"><div class="stat-label">Errors</div><div class="stat-val red">'+(d.total_errors||0)+'</div></div>'
++'<div class="stat"><div class="stat-label">Reward Signals</div><div class="stat-val blue">'+(d.total_rewards||0)+'</div></div>';
+var pv=d.by_prompt_version||[];
+var ph=document.getElementById("prompts");
+if(!pv.length){ph.innerHTML='<div class="empty">No data yet. Analyze some listings first.</div>';return}
+var pt='<table><tr><th>Version</th><th>Reports</th><th>Avg Score</th></tr>';
+pv.forEach(function(p){pt+='<tr><td>'+p.version+'</td><td>'+p.count+'</td><td class="'+(p.avg_score>=7?"green":p.avg_score>=5?"amber":"red")+'">'+p.avg_score+'</td></tr>'});
+pt+='</table>';ph.innerHTML=pt;
+var se=d.section_engagement||[];
+var sh=document.getElementById("sections");
+if(!se.length){sh.innerHTML='<div class="empty">No engagement data yet.</div>'}else{
+var mx=Math.max.apply(null,se.map(function(x){return x.avg_time_ms}));
+var st='<table><tr><th>Section</th><th>Avg Time</th><th>Views</th><th></th></tr>';
+se.forEach(function(x){var pct=Math.round(x.avg_time_ms/mx*100);
+st+='<tr><td>'+x.section+'</td><td>'+Math.round(x.avg_time_ms/1000)+'s</td><td>'+x.views+'</td><td style="width:40%"><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,#00ff88,#00d4ff)"></div></div></td></tr>'});
+st+='</table>';sh.innerHTML=st}
+var veh=d.popular_vehicles||[];
+var vh=document.getElementById("vehicles");
+if(!veh.length){vh.innerHTML='<div class="empty">No vehicles analyzed yet.</div>'}else{
+var vt='<table><tr><th>Make</th><th>Model</th><th>Reports</th></tr>';
+veh.forEach(function(v){vt+='<tr><td>'+v.make+'</td><td>'+v.model+'</td><td>'+v.count+'</td></tr>'});
+vt+='</table>';vh.innerHTML=vt}
+}).catch(function(e){console.error(e)})}
+load();
+</script>
+</body>
+</html>"""
+
 
 
 # ==============================================================
@@ -923,7 +1191,7 @@ def analyze_listing(input_data):
         "analysis": analysis,
         "generated_at": datetime.utcnow().isoformat(),
         "report_id": hashlib.md5(json.dumps(vehicle, sort_keys=True, default=str).encode()).hexdigest()[:12],
-        "version": "6.0.0"
+        "version": "7.0.0"
     }
 
 
@@ -944,13 +1212,50 @@ def api_analyze():
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
+    t_start = time.time()
     try:
         report = analyze_listing(data)
+        total_ms = (time.time() - t_start) * 1000
         if "error" in report:
+            try:
+                save_trace({"url": data.get("url",""), "error": report["error"], "total_time_ms": total_ms, "prompt_version": "v7"})
+            except Exception:
+                pass
             return jsonify(report), 400
+        # === SELF-IMPROVING AGENT: Save trace ===
+        try:
+            v = report.get("vehicle", {})
+            a = report.get("analysis", {})
+            os_data = a.get("overall_score", {}) if isinstance(a, dict) else {}
+            dp_data = a.get("deal_position", {}) if isinstance(a, dict) else {}
+            mr_data = a.get("mechanical_risk", {}) if isinstance(a, dict) else {}
+            trace_id = save_trace({
+                "url": data.get("url", ""),
+                "year": v.get("year", ""),
+                "make": v.get("make", ""),
+                "model": v.get("model", ""),
+                "trim": v.get("trim", ""),
+                "price": v.get("price"),
+                "mileage": v.get("mileage"),
+                "prompt_version": "v7",
+                "total_time_ms": total_ms,
+                "overall_score": os_data.get("score") if isinstance(os_data, dict) else None,
+                "deal_position": dp_data.get("label") if isinstance(dp_data, dict) else None,
+                "mechanical_risk": mr_data.get("label") if isinstance(mr_data, dict) else None,
+                "confidence_level": os_data.get("confidence_level") if isinstance(os_data, dict) else None,
+                "ai_output_json": json.dumps(a) if a else None
+            })
+            report["trace_id"] = trace_id
+        except Exception as te:
+            log.warning(f"Trace save failed: {te}")
         return jsonify(report)
     except Exception as e:
         log.error(f"Analysis error: {e}")
+        total_ms = (time.time() - t_start) * 1000
+        try:
+            save_trace({"url": data.get("url",""), "error": str(e), "total_time_ms": total_ms, "prompt_version": "v7"})
+        except Exception:
+            pass
         return jsonify({"error": "Something went wrong. Please try again."}), 500
 
 @app.route("/api/parse-url", methods=["POST"])
@@ -964,11 +1269,65 @@ def api_parse_url():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
-        "status": "ok", "service": "AskCarBuddy", "version": "6.0.0",
+        "status": "ok", "service": "AskCarBuddy", "version": "7.0.0",
         "apis": {"groq": bool(GROQ_API_KEY), "autodev": bool(AUTODEV_API_KEY), "exa": bool(EXA_API_KEY)}
     })
 
+
+
+# ==============================================================
+# SELF-IMPROVING AGENT — REWARD + EVENT ENDPOINTS
+# ==============================================================
+
+@app.route("/api/reward", methods=["POST"])
+def api_reward():
+    data = request.get_json()
+    if not data or "trace_id" not in data or "signal_type" not in data:
+        return jsonify({"error": "trace_id and signal_type required"}), 400
+
+    allowed_signals = {"thumbs", "useful", "paid", "shared", "copy_question", "section_expand"}
+    if data["signal_type"] not in allowed_signals:
+        return jsonify({"error": f"signal_type must be one of: {allowed_signals}"}), 400
+
+    save_reward(
+        trace_id=data["trace_id"],
+        signal_type=data["signal_type"],
+        signal_value=data.get("signal_value", 1),
+        metadata=data.get("metadata")
+    )
+    return jsonify({"ok": True})
+
+@app.route("/api/event", methods=["POST"])
+def api_event():
+    data = request.get_json()
+    if not data or "trace_id" not in data or "event_type" not in data:
+        return jsonify({"error": "trace_id and event_type required"}), 400
+
+    save_page_event(
+        trace_id=data["trace_id"],
+        event_type=data["event_type"],
+        section_name=data.get("section_name"),
+        duration_ms=data.get("duration_ms"),
+        scroll_depth=data.get("scroll_depth"),
+        metadata=data.get("metadata")
+    )
+    return jsonify({"ok": True})
+
+@app.route("/api/learning")
+def api_learning():
+    try:
+        stats = get_learning_stats()
+        return jsonify(stats)
+    except Exception as e:
+        log.error(f"Learning stats error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/admin/brain")
+def admin_brain():
+    return render_template_string(BRAIN_DASHBOARD_HTML)
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    log.info(f"AskCarBuddy v6.0 starting on port {port}")
+    log.info(f"AskCarBuddy v7.0 starting on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
