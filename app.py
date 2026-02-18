@@ -563,7 +563,7 @@ def get_market_comps(year, make, model, trim=None, zip_code=None, listing_price=
             params["year_max"] = year + 1
         if zip_code:
             params["zip"] = zip_code
-            params["radius"] = 150
+            params["radius"] = 50
         resp = requests.get(AUTODEV_BASE, params=params, headers={
             "Authorization": f"Bearer {AUTODEV_API_KEY}"
         }, timeout=10)
@@ -849,11 +849,13 @@ ANALYSIS_JSON_SCHEMA = """{
     "this_one_specifically": "<what's notable about THIS specific listing -- low miles, good color, desirable trim, clean history, etc.>"
   },
   "market_position": {
-    "vs_market_pct": "<exact percentage vs median -- e.g., '4% below median of 31 comparable listings' or 'Market data unavailable'>",
+    "vs_market_pct": "<exact percentage vs median -- e.g., '4% below median of 31 comparable listings within 50 miles' or 'Market data unavailable'>",
     "label": "<Great Price|Good Price|Fair Price|Slightly High|Above Market>",
-    "context": "<e.g., 'Based on 31 similar 4Runners within 150 miles, this is priced competitively. The Limited trim with low miles typically commands a premium.'>",
+    "local_snapshot": "<1-2 sentence LOCAL market context -- e.g., 'There are 31 similar 4Runners within 50 miles right now. At $38,500, this one sits below the $39,200 median -- a competitive spot for a Limited with 44K miles.'>",
     "comp_count": "<number of comps found, or 'unavailable'>",
-    "fair_range": "<realistic price range for this car based on comps -- e.g., '$38,000-$41,500'>"
+    "fair_range": "<realistic price range based on LOCAL comps within 50 miles -- e.g., '$38,000-$41,500'>",
+    "price_context": "<what's driving the price for THIS specific car -- e.g., 'Low mileage on a Limited trim pushes value up. Color (white/black) is in high demand locally. This price reflects that premium but stays competitive.'>",
+    "supply_demand": "<how easy is this car to find locally -- e.g., 'Only 8 of the 31 comps are under 50K miles. Low-mile examples move quickly in this market.' or 'Market data unavailable'>"
   },
   "mechanical_snapshot": {
     "risk_level": "<Low|Low-Moderate|Moderate|Moderate-High|High>",
@@ -920,7 +922,7 @@ ANALYSIS_JSON_SCHEMA = """{
     "value_retention": "<specific to this model -- e.g., '4Runners hold value exceptionally. Expect roughly 8-12% depreciation over 3 years vs 25-30% for most SUVs. You're buying something that keeps its money.'>"
   },
   "alternatives_context": {
-    "market_supply": "<how easy/hard is it to find comparable vehicles -- e.g., 'These are not easy to find under 50K miles. 31 comps in 150 miles, only 8 under 45K miles.'>",
+    "market_supply": "<how easy/hard is it to find comparable vehicles -- e.g., 'These are not easy to find under 50K miles. 31 comps in 50 miles, only 8 under 45K miles.'>",
     "worth_considering": "<honest context -- e.g., 'If this one feels right, don't overthink it. Low-mile Limiteds move fast.'>"
   },
   "insider_tips": ["<genuine insider knowledge about THIS car -- stuff only a veteran car person would know. Strategic, specific, useful.>"]
@@ -989,7 +991,7 @@ def generate_analysis(vehicle_info, market_data, nhtsa_data, dealer_rep, listing
     # MARKET DATA
     if market_data:
         m = market_data
-        context_parts.append(f"\nMARKET DATA ({m['comp_count']} comparable listings within 150 miles):")
+        context_parts.append(f"\nMARKET DATA ({m['comp_count']} comparable listings within 50 miles):")
         context_parts.append(f"  Median: ${m['median_price']:,}  |  Average: ${m['avg_price']:,}")
         context_parts.append(f"  Range: ${m['min_price']:,} - ${m['max_price']:,}")
         if m.get('percentile') is not None:
