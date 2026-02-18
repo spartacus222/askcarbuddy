@@ -1204,7 +1204,13 @@ def home():
     html_path = os.path.join(os.path.dirname(__file__), "index.html")
     if os.path.exists(html_path):
         with open(html_path) as f:
-            return render_template_string(f.read())
+            from flask import make_response
+            resp = make_response(f.read())
+            resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
     return "<h1>AskCarBuddy</h1><p>Frontend not found.</p>"
 
 @app.route("/api/analyze", methods=["POST"])

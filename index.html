@@ -391,7 +391,7 @@ async function go(){
     if(d.trace_id)setTraceId(d.trace_id);
     if(d.error){err.textContent=d.error;err.style.display='block';showSections()}
     else{rpt.innerHTML=render(d);rpt.style.display='block'}
-  }catch(e){err.textContent='Connection failed. Please try again.';err.style.display='block';showSections()}
+  }catch(e){console.error('AskCarBuddy error:',e);err.textContent='Error: '+(e.message||'Connection failed')+'. Please try again.';err.style.display='block';showSections()}
   ld.style.display='none';resetSteps();btn.disabled=false;btn.textContent='Analyze';
 }
 
