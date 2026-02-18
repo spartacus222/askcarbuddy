@@ -413,6 +413,8 @@ document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='E
 
 function osColor(s){return s>=8?'var(--green)':s>=6?'var(--amber)':s>=4?'#f97316':'var(--red)'}
 function dpColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('steal')>=0||l.indexOf('well below')>=0)return'var(--green)';if(l.indexOf('below')>=0||l.indexOf('at market')>=0)return'var(--amber)';if(l.indexOf('above')>=0||l.indexOf('over')>=0)return'var(--red)';return'var(--text2)'}
+function mrColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('low')>=0)return'var(--green)';if(l.indexOf('moderate')>=0)return'var(--amber)';if(l.indexOf('high')>=0)return'#f97316';return'var(--red)'}
+function mrBg(l){if(!l)return'rgba(255,255,255,0.05)';l=l.toLowerCase();if(l.indexOf('low')>=0)return'rgba(74,222,128,0.15)';if(l.indexOf('moderate')>=0)return'rgba(251,191,36,0.15)';if(l.indexOf('high')>=0)return'rgba(249,115,22,0.15)';return'rgba(239,68,68,0.15)'}
 function render(d){
 var v=d.vehicle||{},a=d.analysis||{};
 var os=a.overall_score||{},dp=a.deal_position||{},mr=a.mechanical_risk||{};
