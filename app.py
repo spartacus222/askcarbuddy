@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AskCarBuddy v5.0 - AI Car Buying Intelligence (Smart Engine)
+AskCarBuddy v6.0 - AI Car Buying Intelligence (Smart Engine)
 =============================================================
 Paste any listing URL -> Get a REAL pro-level intelligence brief.
 
@@ -108,7 +108,7 @@ def extract_ymm_from_url(url):
     return {}
 
 def nhtsa_vin_decode(vin):
-    """Decode VIN via NHTSA — FREE, reliable, gives year/make/model/trim/specs."""
+    """Decode VIN via NHTSA â FREE, reliable, gives year/make/model/trim/specs."""
     try:
         resp = requests.get(f"https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/{vin}?format=json", timeout=10)
         if resp.status_code == 200:
@@ -155,7 +155,7 @@ def scrape_listing_basic(url):
     return ""
 
 def extract_vehicle_from_text(text):
-    """Extract vehicle info from HTML/text — price, mileage, VIN, and title-based YMM."""
+    """Extract vehicle info from HTML/text â price, mileage, VIN, and title-based YMM."""
     info = {}
     # Price
     price_match = re.search(r'\$(\d{1,3},?\d{3})', text)
@@ -174,7 +174,7 @@ def extract_vehicle_from_text(text):
     og = re.search(r'<meta[^>]*property=["\'"]og:title["\'"][^>]*content=["\'"]([^"\'"]*)', text, re.IGNORECASE)
     title_text = (og.group(1) if og else title.group(1) if title else "").strip()
     if title_text:
-        ymm = re.search(r'(20\d{2}|19\d{2})\s+([A-Za-z]+)\s+([A-Za-z0-9][A-Za-z0-9\- ]+?)(?:\s+[-|·•]|\s+for\s|\s+in\s|$)', title_text)
+        ymm = re.search(r'(20\d{2}|19\d{2})\s+([A-Za-z]+)\s+([A-Za-z0-9][A-Za-z0-9\- ]+?)(?:\s+[-|Â·â¢]|\s+for\s|\s+in\s|$)', title_text)
         if ymm:
             info["year"] = int(ymm.group(1))
             info["make"] = ymm.group(2).strip()
@@ -209,7 +209,7 @@ def extract_vehicle_from_text(text):
 
 
 # ==============================================================
-# NHTSA VIN DECODE Ã¢ÂÂ get exact specs
+# NHTSA VIN DECODE ÃÂ¢ÃÂÃÂ get exact specs
 # ==============================================================
 
 def decode_vin_nhtsa(vin):
@@ -243,7 +243,7 @@ def decode_vin_nhtsa(vin):
 
 
 # ==============================================================
-# AUTO.DEV Ã¢ÂÂ VIN lookup + market comps
+# AUTO.DEV ÃÂ¢ÃÂÃÂ VIN lookup + market comps
 # ==============================================================
 
 def lookup_vin_autodev(vin):
@@ -334,7 +334,7 @@ def get_market_comps(year, make, model, trim=None, zip_code=None, listing_price=
 
 
 # ==============================================================
-# NHTSA Ã¢ÂÂ recalls + complaints
+# NHTSA ÃÂ¢ÃÂÃÂ recalls + complaints
 # ==============================================================
 
 def get_nhtsa_data(year, make, model):
@@ -372,7 +372,7 @@ def get_nhtsa_data(year, make, model):
                 areas[comp] = areas.get(comp, 0) + 1
             result["top_complaint_areas"] = sorted(areas.items(), key=lambda x: -x[1])[:8]
     except: pass
-    # Risk score Ã¢ÂÂ realistic calibration
+    # Risk score ÃÂ¢ÃÂÃÂ realistic calibration
     cc = result["complaint_count"]
     if cc <= 20: complaint_pts = 0
     elif cc <= 50: complaint_pts = 0.5
@@ -425,7 +425,7 @@ def get_dealer_reputation(dealer_name, dealer_location=None):
 
 
 # ==============================================================
-# WEB RESEARCH Ã¢ÂÂ Exa search for model-specific intelligence
+# WEB RESEARCH ÃÂ¢ÃÂÃÂ Exa search for model-specific intelligence
 # ==============================================================
 
 def research_vehicle_web(year, make, model, trim=None):
@@ -456,130 +456,157 @@ def research_vehicle_web(year, make, model, trim=None):
 
 
 # ==============================================================
-# AI SYSTEM PROMPT v4 Ã¢ÂÂ IDENTITY-ANCHORED INTELLIGENCE
+# AI SYSTEM PROMPT v4 ÃÂ¢ÃÂÃÂ IDENTITY-ANCHORED INTELLIGENCE
 # ==============================================================
 # The key insight: instead of one massive prompt that says "be specific",
 # we build a VEHICLE IDENTITY CARD that the model must reference in every answer.
 # Then we use a two-pass approach: research context first, then generate.
 
-ANALYSIS_SYSTEM_PROMPT = """You are AskCarBuddy Ã¢ÂÂ a car buying intelligence engine. You have 20 years of dealership experience selling every make and model.
+ANALYSIS_SYSTEM_PROMPT = """You are AskCarBuddy -- a car buying intelligence engine with 20 years of dealership F&I and sales management experience.
 
-YOUR JOB: The buyer found a car they WANT. Help them buy it SMART. Not scare them. Not talk them out of it. Arm them with knowledge.
+YOUR JOB: The buyer found a car they WANT. Help them buy it SMART. Not scare them. Not talk them out of it. Arm them with decisive intelligence.
 
-Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
-ABSOLUTE RULES Ã¢ÂÂ VIOLATIONS = FAILURE
-Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+====================================================================
+ABSOLUTE RULES -- VIOLATIONS = FAILURE
+====================================================================
 
-RULE 1: EVERY answer must name the specific car.
-  Ã¢ÂÂ BAD: "Check for unusual noises during the test drive"
-  Ã¢ÂÂ GOOD: "On the 2017 Prius Three with the 1.8L 2ZR-FXE, listen for a rattling heat shield Ã¢ÂÂ it's the #1 minor complaint on Gen 4 Priuses over 80K miles"
+RULE 1: EVERY answer must name the specific car by year, make, model, and relevant component.
+  BAD: "Check for unusual noises during the test drive"
+  GOOD: "On the 2017 Prius Three with the 1.8L 2ZR-FXE, listen for a rattling heat shield -- it's the #1 minor complaint on Gen 4 Priuses over 80K miles"
 
-RULE 2: Questions must be things a BUYER couldn't Google.
-  Ã¢ÂÂ BAD: "Ask about the vehicle history"
-  Ã¢ÂÂ GOOD: "Ask them to pull up the hybrid battery health report on the Techstream Ã¢ÂÂ any Toyota dealer can run this in 10 minutes. You want cycle count under 400 and SOH above 70%"
+RULE 2: Questions must reveal things a buyer can't Google.
+  BAD: "Ask about the vehicle history"
+  GOOD: "Ask them to pull up the hybrid battery health report on Techstream -- any Toyota dealer can run this in 10 minutes. You want cycle count under 400 and SOH above 70%"
 
 RULE 3: Known quirks must be DOCUMENTED, REAL issues for THIS generation.
-  Ã¢ÂÂ BAD: "Some owners report transmission issues"
-  Ã¢ÂÂ GOOD: "The 2017 Prius uses Toyota's eCVT (technically a power-split device, not a traditional CVT). It's virtually bulletproof Ã¢ÂÂ there are almost zero transmission failures reported. The inverter coolant pump is the component to watch, with a handful of failures around 120-150K miles ($400-600 to replace)"
+  BAD: "Some owners report transmission issues"
+  GOOD: "The 2017 Prius uses Toyota's eCVT (power-split device, not traditional CVT). Virtually bulletproof. The inverter coolant pump is the component to watch -- handful of failures around 120-150K ($400-600)"
 
-RULE 4: Use REAL numbers. Cost estimates, percentages, mileage intervals.
-  Ã¢ÂÂ BAD: "Budget for regular maintenance"
-  Ã¢ÂÂ GOOD: "At 104K miles, you're due for the 105K service: transmission fluid change ($150-180), spark plugs ($180-220 for iridium), coolant flush ($120-150). Total: ~$450-550"
+RULE 4: Use REAL numbers. Cost estimates, percentages, mileage intervals. No weasel words.
+  BAD: "Budget for regular maintenance"
+  GOOD: "At 104K miles, you're due for the 105K service: trans fluid ($150-180), spark plugs ($180-220 iridium), coolant flush ($120-150). Total: ~$450-550"
 
 RULE 5: Frame recalls as GOOD NEWS (free manufacturer fix).
-  Ã¢ÂÂ BAD: "This car has 3 recalls which is concerning"
-  Ã¢ÂÂ GOOD: "3 recalls on file Ã¢ÂÂ all have free fixes at any Toyota dealer. The fuel pump relay one is quick (30 min). Confirm all 3 are completed by running the VIN at toyota.com/recall"
 
-RULE 6: Complaint context is MANDATORY.
-  Ã¢ÂÂ BAD: "115 complaints filed with NHTSA"
-  Ã¢ÂÂ GOOD: "115 NHTSA complaints across ~150,000 units sold = 0.077% complaint rate. That's one of the lowest in the compact hybrid class. For comparison, the 2017 Honda CR-V has 900+ complaints"
+RULE 6: Complaint context is MANDATORY with source, baseline, and fleet size.
+  BAD: "115 complaints filed with NHTSA"
+  GOOD: "115 NHTSA complaints across ~150,000 units sold = 0.077% rate. That's among the lowest in the compact hybrid class."
 
-RULE 7: Pro tips must be INSIDER knowledge only.
-  Ã¢ÂÂ BAD: "Consider getting a pre-purchase inspection"
-  Ã¢ÂÂ GOOD: "Toyota's hybrid battery warranty was extended to 10 years/150K miles for 2020+ models, but some dealers will goodwill the repair on 2017s if the battery fails near the 8yr mark Ã¢ÂÂ ask the service manager, not the salesperson"
+RULE 7: NO generic statements. "Toyota has a reputation for durability" = BANNED. Replace fluff with numbers.
 
-RULE 8: Test drive checklist items must test THIS car's known characteristics.
-  Ã¢ÂÂ BAD: "Test the brakes"
-  Ã¢ÂÂ GOOD: "Brake feel on the Prius is weird by design Ã¢ÂÂ the first inch of pedal travel is regenerative braking (no friction). Press harder to feel the mechanical brakes engage. If there's a grinding or pulsation when the mechanical brakes kick in, the rotors need resurfacing (~$250)"
+RULE 8: NO soft language. Replace "fair price considering condition" with "Priced 4.6% above local median. Moderate negotiation leverage. Target: $39,200-$40,000."
 
-Return VALID JSON. Every string value must reference the specific vehicle by name, year, or component."""
+RULE 9: Financing estimates must be credit-tier specific:
+  BAD: "APRs ranging from 4.5% to 7%"
+  GOOD: "With 720+ credit: 5.2-5.8% APR likely. With 660-700: expect 6.5-8%."
+
+RULE 10: The Overall Score is the PRIMARY metric. It is your confident recommendation on a 0.0-10.0 scale with one decimal. Deal Position and Mechanical Risk are CONTEXT -- not competing scores.
+
+RULE 11: Include a confidence_level (0-100) for the overall analysis. AI that pretends certainty feels fake. Structured confidence builds trust.
+
+RULE 12: Pro tips must be genuine insider knowledge only. Remove soft advice. Replace with strategy.
+
+Return VALID JSON matching the schema exactly. Every string value must reference the specific vehicle."""
 
 
 ANALYSIS_JSON_SCHEMA = """{
-  "buy_score": {
-    "score": <1-10>,
-    "label": "<Great Find|Solid Pick|Worth a Look|Proceed with Caution|Think Twice>",
-    "one_liner": "<confident verdict naming the car Ã¢ÂÂ e.g., 'This 2017 Prius Three at $13K with 104K miles is a no-brainer for anyone wanting a reliable 50+ MPG daily driver'>"
+  "overall_score": {
+    "score": <0.0-10.0 with one decimal>,
+    "label": "<Strong Buy|Buy|Lean Buy|Neutral|Lean Pass|Pass>",
+    "one_liner": "<decisive verdict naming the car -- e.g., 'This 2021 4Runner TRD Off-Road at $41,175 with 44K miles is priced 5% above median but the low mileage and trim demand justify it'>",
+    "confidence_level": <50-99 integer, your honest confidence in this analysis>,
+    "confidence_reason": "<why confidence is at this level -- e.g., 'Strong data: 47 market comps, full NHTSA records, known reliability profile'>"
+  },
+  "deal_position": {
+    "vs_market_pct": "<exact percentage above or below median -- e.g., '4.6% above local median' or '12% below median'>",
+    "label": "<Steal|Well Below Market|Below Market|At Market|Slightly Above|Above Market|Overpriced>",
+    "target_range": "<specific negotiation target -- e.g., '$39,200-$40,000'>",
+    "negotiation_leverage": "<Low|Moderate|High>",
+    "leverage_reason": "<why -- e.g., 'This trim is top-25% demand locally. Expect lower flexibility.' or 'Listed 41 days vs 23-day regional avg. Dealer motivated.'>"
+  },
+  "mechanical_risk": {
+    "label": "<Low|Low-Moderate|Moderate|Moderate-High|High>",
+    "repair_probability": "<probability of unexpected repair >$500 in next 12 months -- e.g., 'Low (estimated 8-12% chance)'>",
+    "explanation": "<specific to this model/mileage -- e.g., 'The 5th-gen 4Runner's 4.0L 1GR-FE V6 is one of Toyota's most overbuilt engines. At 44K miles, all major components are well within expected life.'>"
   },
   "at_a_glance": {
-    "best_thing": "<the single best thing about THIS specific car Ã¢ÂÂ name it>",
-    "know_before_you_go": "<the ONE most important thing to check Ã¢ÂÂ specific and actionable>"
+    "best_thing": "<single best thing about THIS specific car>",
+    "biggest_question": "<the ONE thing you need to verify before buying>"
   },
-  "risk_assessment": {
-    "score_context": "<explain what the NHTSA numbers MEAN with fleet-size context and class comparison>",
-    "key_reassurances": ["<specific safety/reliability positives Ã¢ÂÂ reference the car>"],
-    "items_to_verify": ["<framed as due diligence, not red flags Ã¢ÂÂ e.g., 'Confirm recall XX-XXX (fuel pump relay) is completed via toyota.com/recall Ã¢ÂÂ free 30-min fix if not'>"]
-  },
-  "deal_analysis": {
-    "price_vs_market": "<specific: 'At $13,435, this 2017 Prius Three sits $X below the $Y median across Z listings within 150 miles'>",
-    "why_this_price": "<what's driving the price Ã¢ÂÂ mileage, trim, color, market supply>",
-    "value_verdict": "<direct: is this a good deal or not>",
-    "deal_label": "<Steal|Great Deal|Good Value|Fair Price|Slightly High|Overpriced>"
+  "nhtsa_intel": {
+    "complaint_summary": "<precise stats with source -- e.g., 'NHTSA shows 87 complaints across this model year. Primary areas: suspension (23), electrical (19), engine (12). Given estimated 180K units sold, that is a 0.048% complaint rate -- well below class average.'>",
+    "recall_summary": "<count and status -- e.g., '4 recalls on file -- all have free dealer fixes. Most critical: fuel pump module (NHTSA 20V-XXX). Confirm completion at toyota.com/recall'>",
+    "key_reassurances": ["<specific safety/reliability positives referencing the car>"],
+    "items_to_verify": ["<framed as due diligence, not red flags>"]
   },
   "what_to_know": {
-    "generation_overview": "<2-3 sentences about THIS generation Ã¢ÂÂ number it, name the platform, what changed from previous gen. e.g., 'This is a 4th-gen Prius (XW50, 2016-2022) built on Toyota's TNGA platform...'>",
-    "what_owners_love": ["<things REAL owners of this generation praise Ã¢ÂÂ be specific to this model>"],
+    "generation_overview": "<2-3 sentences about THIS generation -- number it, name the platform, what changed>",
     "known_quirks": [
       {
-        "item": "<specific documented issue for this generation/engine Ã¢ÂÂ name the component>",
+        "item": "<specific documented issue for this generation/engine>",
         "severity": "<minor_quirk|worth_checking|important>",
         "reality_check": "<how common? what % of owners? what does it cost?>",
-        "what_to_do": "<exactly what to check and how Ã¢ÂÂ not 'have it inspected'>"
+        "what_to_do": "<exactly what to check and how>"
       }
     ],
-    "big_ticket_watch": "<the ONE expensive component at THIS mileage Ã¢ÂÂ with cost and expected remaining life>",
-    "maintenance_now": [
+    "big_ticket_watch": "<ONE expensive component at THIS mileage with cost and expected remaining life>",
+    "maintenance_due": [
       {
-        "service": "<specific service due at this mileage per manufacturer schedule>",
-        "cost": "<specific cost range for THIS car>",
-        "urgency": "<due_now|soon|within_6_months|within_a_year>",
-        "why": "<why this matters for THIS car's engine/transmission specifically>"
+        "service": "<specific service due at this mileage>",
+        "cost": "<cost range for THIS car>",
+        "urgency": "<due_now|next_3_months|next_6_months|next_year>",
+        "why": "<why this matters for THIS drivetrain>"
       }
     ]
   },
-  "your_game_plan": {
-    "before_you_go": ["<specific prep Ã¢ÂÂ name the tools, websites, VIN portals for THIS make>"],
+  "game_plan": {
+    "before_you_go": ["<specific prep -- name the tools, websites, VIN portals for THIS make>"],
     "smart_questions": [
       {
-        "ask": "<insider question Ã¢ÂÂ what to literally say to the salesperson>",
-        "why_this_matters": "<what the answer reveals that you can't find online>",
-        "good_answer": "<what a trustworthy dealer would say>",
-        "dig_deeper_if": "<what answer should concern you>"
+        "ask": "<insider question -- what to literally say>",
+        "why_this_matters": "<what the answer reveals>",
+        "good_answer": "<trustworthy dealer response>",
+        "red_flag": "<concerning response>"
       }
     ],
-    "test_drive_checklist": ["<specific to THIS car's drivetrain, known behaviors, and common failure points>"],
+    "test_drive_checklist": ["<specific to THIS car's drivetrain and known failure points>"],
+    "opening_offer_script": "<structured desk script -- e.g., 'I have reviewed comparable listings in a 150-mile radius and the median is $39,176. If we can align closer to $39,500 out the door, I am ready to move today.'>",
+    "alternative_angle": "<backup leverage -- e.g., 'If pricing is firm, I would like to review documentation fees and any add-on charges.'>",
     "at_the_desk": {
-      "expected_otd_range": "<specific OTD estimate including state tax + fees>",
-      "standard_fees": ["<fee: $amount Ã¢ÂÂ expected>"],
-      "fees_worth_asking_about": ["<fee that's sometimes inflated, what fair amount is>"],
-      "financing_intel": "<specific to this price point and vehicle type>"
+      "expected_otd_range": "<specific OTD estimate with tax and fees>",
+      "doc_fee_range": "<typical doc fee for this state/market>",
+      "fees_to_question": ["<fee that may be inflated, with fair amount>"],
+      "financing_by_credit": {
+        "excellent_720_plus": "<APR range>",
+        "good_660_720": "<APR range>",
+        "fair_below_660": "<APR range>"
+      },
+      "dealer_margin_estimate": "<estimated gross margin on this unit -- e.g., 'Likely $1,500-2,500 gross on a used unit at this price point'>"
     }
   },
-  "cost_to_own": {
-    "monthly_fuel": "<calculated from THIS car's actual MPG>",
-    "annual_insurance_estimate": "<realistic for this vehicle class>",
-    "annual_maintenance": "<based on THIS car's schedule at THIS mileage>",
-    "first_year_budget": "<itemized year 1 maintenance for THIS car at THIS mileage>",
-    "depreciation_outlook": "<how THIS model holds value specifically>",
-    "total_monthly_cost": "<all-in monthly estimate>",
-    "verdict": "<one sentence Ã¢ÂÂ cheap, average, or expensive to own?>"
+  "ownership_projection": {
+    "three_year_total": "<total 3-year cost estimate>",
+    "monthly_equivalent": "<all-in monthly cost>",
+    "breakdown": {
+      "monthly_fuel": "<calculated from this car's actual MPG>",
+      "monthly_insurance": "<realistic estimate for this vehicle class>",
+      "monthly_maintenance": "<based on this car's schedule at this mileage>",
+      "monthly_depreciation": "<how this model depreciates>"
+    },
+    "first_year_maintenance_budget": "<itemized year-1 maintenance>",
+    "depreciation_outlook": "<specific -- e.g., 'The 4Runner holds value exceptionally. Expect 8-12% depreciation over 3 years vs 25-30% class average.'>"
   },
-  "pro_tips": ["<genuine insider knowledge about THIS specific car that only a veteran would know>"]
+  "if_you_walk_away": {
+    "comparable_range": "<what similar alternatives cost -- e.g., 'Comparable 2020-2022 4Runner TRD Off-Roads in your area: $38,500-$44,200 (12 listings)'>",
+    "better_value_exists": <true or false>,
+    "context": "<e.g., 'Supply is tight for this trim. Walking away means competing for similar inventory at similar prices.'>"
+  },
+  "pro_tips": ["<genuine insider knowledge about THIS car that only a veteran would know -- no soft advice, only strategy>"]
 }"""
 
 
 # ==============================================================
-# AI ANALYSIS GENERATOR v4 Ã¢ÂÂ Identity-anchored, two-context
+# AI ANALYSIS GENERATOR v4 ÃÂ¢ÃÂÃÂ Identity-anchored, two-context
 # ==============================================================
 
 def build_vehicle_identity(vehicle_info, vin_decode=None):
@@ -587,7 +614,7 @@ def build_vehicle_identity(vehicle_info, vin_decode=None):
     v = vehicle_info
     lines = []
     lines.append("=" * 50)
-    lines.append("VEHICLE IDENTITY CARD Ã¢ÂÂ Reference this in EVERY answer")
+    lines.append("VEHICLE IDENTITY CARD ÃÂ¢ÃÂÃÂ Reference this in EVERY answer")
     lines.append("=" * 50)
 
     year = v.get('year', '?')
@@ -685,9 +712,9 @@ def generate_analysis(vehicle_info, market_data, nhtsa_data, dealer_rep, listing
         for i, review in enumerate(dealer_rep["raw_reviews"][:3]):
             context_parts.append(f"  Review {i+1}: {review[:400]}")
 
-    # WEB RESEARCH Ã¢ÂÂ model-specific intelligence from the internet
+    # WEB RESEARCH ÃÂ¢ÃÂÃÂ model-specific intelligence from the internet
     if web_research:
-        context_parts.append(f"\nWEB RESEARCH Ã¢ÂÂ Known issues and owner feedback for this vehicle:")
+        context_parts.append(f"\nWEB RESEARCH ÃÂ¢ÃÂÃÂ Known issues and owner feedback for this vehicle:")
         context_parts.append(web_research[:4000])
 
     # RAW LISTING
@@ -711,7 +738,7 @@ IMPORTANT:
 Return the JSON analysis matching this schema:
 {ANALYSIS_JSON_SCHEMA}"""
 
-    for attempt, max_tok in enumerate([8192, 16384], 1):
+    for attempt, max_tok in enumerate([12288, 16384], 1):
         try:
             log.info(f"Groq attempt {attempt} with max_tokens={max_tok}")
             resp = requests.post(GROQ_URL, json={
@@ -749,7 +776,7 @@ Return the JSON analysis matching this schema:
 
 
 # ==============================================================
-# ORCHESTRATOR Ã¢ÂÂ now with VIN decode + web research
+# ORCHESTRATOR ÃÂ¢ÃÂÃÂ now with VIN decode + web research
 # ==============================================================
 
 def analyze_listing(input_data):
@@ -896,7 +923,7 @@ def analyze_listing(input_data):
         "analysis": analysis,
         "generated_at": datetime.utcnow().isoformat(),
         "report_id": hashlib.md5(json.dumps(vehicle, sort_keys=True, default=str).encode()).hexdigest()[:12],
-        "version": "5.0.0"
+        "version": "6.0.0"
     }
 
 
@@ -937,11 +964,11 @@ def api_parse_url():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
-        "status": "ok", "service": "AskCarBuddy", "version": "5.0.0",
+        "status": "ok", "service": "AskCarBuddy", "version": "6.0.0",
         "apis": {"groq": bool(GROQ_API_KEY), "autodev": bool(AUTODEV_API_KEY), "exa": bool(EXA_API_KEY)}
     })
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    log.info(f"AskCarBuddy v5.0 starting on port {port}")
+    log.info(f"AskCarBuddy v6.0 starting on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
