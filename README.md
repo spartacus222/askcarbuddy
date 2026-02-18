@@ -1,43 +1,44 @@
-# 🚗 AskCarBuddy — AI Car Buying Intelligence
+# 🚗 AskCarBuddy
 
-Paste any car listing URL → Get a pro-level acquisition brief.
+**AI-powered car buying intelligence.** Paste any car listing URL, get an instant pro-level brief.
 
 ## What You Get
-- **Buy Score** (1-10) with clear verdict
-- **Market Position** — price percentile, regional comparison, demand score
-- **Reliability Intel** — known issues for this exact generation/engine
-- **Smart Questions** — what to ask, why, good vs red flag answers
-- **Negotiation Strategy** — opening offer, target, walk-away, tactics, fee watchlist
-- **Shareable Report** — screenshot-worthy, bring to the dealership
+- **Buy Score** (1-10) with honest verdict
+- **Market Intel** — where the price sits vs comparable listings
+- **What to Know** — real issues for this specific car, not generic advice
+- **Your Game Plan** — what to check, what to ask, what to expect at the desk
+- **Cost to Own** — fuel, insurance, maintenance estimates
+- **Pro Tips** — insider knowledge specific to this car
+
+## Philosophy
+You found a car you like? **We help you buy it smart.** We don't scare you away.
 
 ## Stack
-- **Backend**: Python/Flask + Groq AI
-- **Data**: Auto.dev API + NHTSA (both free)
-- **Frontend**: Pure HTML/CSS/JS (GitHub Pages)
-- **Deploy**: Railway (~$5/mo)
-- **Payments**: Stripe ($19/report)
+- Python/Flask backend
+- Groq AI (Llama 3.3 70B)
+- Auto.dev API (market comps + VIN lookup)
+- NHTSA API (recalls + complaints)
+- Exa API (listing scraping)
 
-## Quick Start
+## Deploy on Railway
+1. Fork this repo
+2. Connect to Railway
+3. Set environment variables: `AUTODEV_API_KEY`, `GROQ_API_KEY`, `EXA_API_KEY`
+4. Deploy
+
+## Run Locally
 ```bash
 pip install -r requirements.txt
 cp .env.example .env  # fill in your keys
 python app.py
 ```
 
-## Deploy to Railway
-1. Fork this repo
-2. Connect to Railway
-3. Set env vars: `AUTODEV_API_KEY`, `GROQ_API_KEY`
-4. Deploy!
-
-## Business Model
-- Free: Buy Score + Market Position + 2 Smart Questions
-- $19: Full report (all questions, negotiation scripts, tactics, PDF)
-
-## API
-- `POST /api/analyze` — Full analysis (accepts URL or manual input)
-- `POST /api/parse-url` — Parse listing URL
-- `GET /health` — Health check
+## Cost
+- Groq: Free tier (30 req/min)
+- Auto.dev: Free Starter plan
+- NHTSA: Free (government API)
+- Exa: Free tier available
+- Railway: ~$5/mo
 
 ---
-Built by AskCarBuddy Team
+Built by AskCarBuddy © 2026
