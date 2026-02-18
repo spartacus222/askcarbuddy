@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 """
-AskCarBuddy MVP v2 - AI Car Buying Intelligence
-================================================
+AskCarBuddy v3 - AI Car Buying Intelligence (Enhanced)
+======================================================
 Paste any listing URL -> Get a pro-level intelligence brief.
 
 Philosophy: You found a car you like? We help you buy it SMART.
-We don't scare you away. We arm you with knowledge.
+No fear tactics. No "walk away" scripts. Just intelligence.
 
-Stack: Flask + Groq AI + Auto.dev + NHTSA + Exa (scraping)
+NEW in v3:
+- Risk Score (0-10) — NHTSA + VIN web scan
+- Deal Score + Price Distribution — visual market position
+- Dealer Reputation Snapshot — scraped reviews + trust score
+- Enhanced Cost to Own — fuel, insurance, maintenance estimates
+- Depreciation Forecast — how well this car holds value
+
+Stack: Flask + Groq AI + Auto.dev + NHTSA + Exa
 """
 
 import os
@@ -17,19 +24,17 @@ import time
 import hashlib
 import logging
 import requests
+import statistics
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
 
-# -- Logging --
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("askcarbuddy")
 
-# -- Flask App --
 app = Flask(__name__)
 CORS(app)
 
-# -- Config --
 AUTODEV_API_KEY   = os.getenv("AUTODEV_API_KEY", "")
 GROQ_API_KEY      = os.getenv("GROQ_API_KEY", "")
 EXA_API_KEY       = os.getenv("EXA_API_KEY", "")
@@ -43,71 +48,42 @@ GROQ_MODEL        = "llama-3.3-70b-versatile"
 EXA_URL           = "https://api.exa.ai/contents"
 EXA_SEARCH_URL    = "https://api.exa.ai/search"
 
-REPORT_PRICE      = 19  # dollars
-
 
 # ==============================================================
-# URL PARSER - Extract vehicle details from listing URLs
+# URL PARSER
 # ==============================================================
 
 def parse_listing_url(url):
-    """Extract vehicle info from a listing URL."""
     url = url.strip()
     info = {"source": "unknown", "url": url}
-
     if "cars.com" in url:
         info["source"] = "cars.com"
-        vin_match = re.search(r'/detail/([A-HJ-NPR-Z0-9]{17})', url, re.IGNORECASE)
-        if vin_match:
-            info["vin"] = vin_match.group(1).upper()
-        ym_match = re.search(r'/(\d{4})[-_]([a-z]+)[-_]([a-z0-9]+)', url, re.IGNORECASE)
-        if ym_match:
-            info["year"] = int(ym_match.group(1))
-            info["make"] = ym_match.group(2).title()
-            info["model"] = ym_match.group(3).title()
-
     elif "autotrader.com" in url:
         info["source"] = "autotrader"
-        vin_match = re.search(r'/([A-HJ-NPR-Z0-9]{17})', url, re.IGNORECASE)
-        if vin_match:
-            info["vin"] = vin_match.group(1).upper()
-
     elif "cargurus.com" in url:
         info["source"] = "cargurus"
-        vin_match = re.search(r'[#/]([A-HJ-NPR-Z0-9]{17})', url, re.IGNORECASE)
-        if vin_match:
-            info["vin"] = vin_match.group(1).upper()
-
     elif "facebook.com/marketplace" in url:
         info["source"] = "facebook"
-
     else:
         info["source"] = "dealer"
-        vin_match = re.search(r'[/=]([A-HJ-NPR-Z0-9]{17})(?:[/&?.]|$)', url, re.IGNORECASE)
-        if vin_match:
-            info["vin"] = vin_match.group(1).upper()
-
+    vin_match = re.search(r'[/=]([A-HJ-NPR-Z0-9]{17})(?:[/&?.]|$)', url, re.IGNORECASE)
+    if vin_match:
+        info["vin"] = vin_match.group(1).upper()
     return info
 
 
-
 # ==============================================================
-# SCRAPER - Pull listing details from any URL via Exa
+# SCRAPER
 # ==============================================================
 
 def scrape_listing_exa(url):
-    """Use Exa API to fetch clean page content from any listing URL."""
     if not EXA_API_KEY:
-        return scrape_listing_basic(url)
+        return scrape_listing_basic(url), []
     try:
         resp = requests.post(EXA_URL, json={
-            "urls": [url],
-            "text": True,
+            "urls": [url], "text": True,
             "extras": {"links": 3, "imageLinks": 5}
-        }, headers={
-            "x-api-key": EXA_API_KEY,
-            "Content-Type": "application/json"
-        }, timeout=15)
+        }, headers={"x-api-key": EXA_API_KEY, "Content-Type": "application/json"}, timeout=15)
         if resp.status_code == 200:
             results = resp.json().get("results", [])
             if results:
@@ -118,10 +94,8 @@ def scrape_listing_exa(url):
 
 
 def scrape_listing_basic(url):
-    """Basic requests scrape as fallback."""
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        resp = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10, allow_redirects=True)
         if resp.status_code == 200:
             return resp.text
     except:
@@ -130,39 +104,30 @@ def scrape_listing_basic(url):
 
 
 def extract_vehicle_from_text(text):
-    """Parse vehicle details from raw listing text."""
     info = {}
-    # Price
     price_match = re.search(r'\$(\d{1,3},?\d{3})', text)
     if price_match:
         info["price"] = int(price_match.group(1).replace(",", ""))
-    # Mileage
     mile_match = re.search(r'(\d{1,3},?\d{3})\s*(?:mi(?:les)?|mileage|odometer)', text, re.IGNORECASE)
     if mile_match:
         info["mileage"] = int(mile_match.group(1).replace(",", ""))
-    # VIN
     vin_match = re.search(r'VIN[:\s]*([A-HJ-NPR-Z0-9]{17})', text, re.IGNORECASE)
     if vin_match:
         info["vin"] = vin_match.group(1).upper()
-    # Year/Make/Model from title-like pattern
     ymm = re.search(r'(20\d{2}|19\d{2})\s+([A-Z][a-zA-Z]+)\s+([A-Z][a-zA-Z0-9\-]+)', text)
     if ymm:
         info["year"] = int(ymm.group(1))
         info["make"] = ymm.group(2)
         info["model"] = ymm.group(3)
-    # Trim
-    trim_match = re.search(r'(?:trim|package)[:\s]+([A-Za-z0-9 \-]+)', text, re.IGNORECASE)
-    if trim_match:
-        info["trim"] = trim_match.group(1).strip()
     return info
 
 
+
 # ==============================================================
-# AUTO.DEV - VIN lookup + market comps
+# AUTO.DEV - VIN lookup + market comps + DEAL SCORE
 # ==============================================================
 
 def lookup_vin_autodev(vin):
-    """Look up a specific VIN on Auto.dev for rich listing data."""
     if not AUTODEV_API_KEY:
         return None
     try:
@@ -170,27 +135,18 @@ def lookup_vin_autodev(vin):
             "Authorization": f"Bearer {AUTODEV_API_KEY}"
         }, timeout=10)
         if resp.status_code == 200:
-            data = resp.json()
-            records = data.get("records", [])
+            records = resp.json().get("records", [])
             if records:
                 r = records[0]
                 return {
-                    "year": r.get("year"),
-                    "make": r.get("make"),
-                    "model": r.get("model"),
-                    "trim": r.get("trim"),
-                    "price": r.get("price"),
-                    "mileage": r.get("mileage"),
-                    "dealerName": r.get("dealerName"),
-                    "dealerPhone": r.get("dealerPhone"),
-                    "displayColor": r.get("displayColor"),
-                    "photoUrls": r.get("photoUrls", []),
-                    "bodyType": r.get("bodyType"),
-                    "engine": r.get("engine"),
-                    "transmission": r.get("transmission"),
-                    "drivetrain": r.get("drivetrain"),
-                    "fuelType": r.get("fuelType"),
-                    "mpgCity": r.get("mpgCity"),
+                    "year": r.get("year"), "make": r.get("make"), "model": r.get("model"),
+                    "trim": r.get("trim"), "price": r.get("price"), "mileage": r.get("mileage"),
+                    "dealerName": r.get("dealerName"), "dealerPhone": r.get("dealerPhone"),
+                    "dealerWebsite": r.get("dealerWebsite"),
+                    "displayColor": r.get("displayColor"), "photoUrls": r.get("photoUrls", []),
+                    "bodyType": r.get("bodyType"), "engine": r.get("engine"),
+                    "transmission": r.get("transmission"), "drivetrain": r.get("drivetrain"),
+                    "fuelType": r.get("fuelType"), "mpgCity": r.get("mpgCity"),
                     "mpgHighway": r.get("mpgHighway"),
                 }
     except Exception as e:
@@ -199,18 +155,16 @@ def lookup_vin_autodev(vin):
 
 
 def get_market_comps(year, make, model, trim=None, zip_code=None, listing_price=None):
-    """Get comparable listings from Auto.dev to establish market position."""
     if not AUTODEV_API_KEY:
         return None
     try:
-        params = {"make": make, "model": model}
+        params = {"make": make, "model": model, "page_size": 50}
         if year:
             params["year_min"] = max(year - 1, 1990)
             params["year_max"] = year + 1
         if zip_code:
             params["zip"] = zip_code
-            params["radius"] = 100
-        params["page_size"] = 50
+            params["radius"] = 150
 
         resp = requests.get(AUTODEV_BASE, params=params, headers={
             "Authorization": f"Bearer {AUTODEV_API_KEY}"
@@ -220,34 +174,56 @@ def get_market_comps(year, make, model, trim=None, zip_code=None, listing_price=
             data = resp.json()
             records = data.get("records", [])
             total = data.get("totalCount", len(records))
-            prices = [r["price"] for r in records if r.get("price") and r["price"] > 0]
+            prices = sorted([r["price"] for r in records if r.get("price") and r["price"] > 0])
 
             if not prices:
                 return None
 
-            prices.sort()
             avg_price = sum(prices) // len(prices)
+            median_price = int(statistics.median(prices))
             min_price = prices[0]
             max_price = prices[-1]
 
+            # Percentile of this listing
             percentile = None
+            deal_score = None
+            savings = None
             if listing_price:
                 below = len([p for p in prices if p <= listing_price])
                 percentile = round(below / len(prices) * 100)
+                # Deal score: how good is this price? Lower percentile = better deal
+                # 0-20th percentile = great deal, 20-40 = good, 40-60 = fair, 60-80 = above avg, 80-100 = high
+                deal_score = max(1, min(10, round(10 - (percentile / 10))))
+                savings = median_price - listing_price  # positive = saving money
 
-            spread = round((max_price - min_price) / avg_price * 100) if avg_price > 0 else 0
-            demand = min(10, max(1, total // 10))
+            # Price distribution buckets for chart
+            bucket_size = max(1000, (max_price - min_price) // 8)
+            buckets = []
+            current = min_price
+            while current < max_price:
+                count = len([p for p in prices if current <= p < current + bucket_size])
+                buckets.append({"min": current, "max": current + bucket_size, "count": count})
+                current += bucket_size
+
+            # Mileage-adjusted comps
+            mileage_prices = []
+            for r in records:
+                if r.get("price") and r.get("mileage") and r["price"] > 0:
+                    mileage_prices.append({"price": r["price"], "mileage": r["mileage"]})
 
             return {
                 "avg_price": avg_price,
+                "median_price": median_price,
                 "min_price": min_price,
                 "max_price": max_price,
                 "percentile": percentile,
+                "deal_score": deal_score,
+                "savings": savings,
                 "comp_count": len(prices),
                 "total_market": total,
-                "demand_score": demand,
-                "price_spread": spread,
-                "prices_sample": prices[:20]
+                "price_buckets": buckets,
+                "prices_sample": prices[:30],
+                "mileage_prices": mileage_prices[:30]
             }
     except Exception as e:
         log.warning(f"Market comp lookup failed: {e}")
@@ -255,14 +231,16 @@ def get_market_comps(year, make, model, trim=None, zip_code=None, listing_price=
 
 
 # ==============================================================
-# NHTSA - Recalls + complaints
+# NHTSA - Recalls + complaints + RISK SCORE
 # ==============================================================
 
 def get_nhtsa_data(year, make, model):
-    """Fetch recalls and complaints from NHTSA."""
-    result = {"recall_count": 0, "complaint_count": 0, "recalls": [], "top_complaint_areas": []}
+    result = {
+        "recall_count": 0, "complaint_count": 0,
+        "recalls": [], "complaints_raw": [],
+        "top_complaint_areas": [], "risk_score": 0, "risk_label": "Low Risk"
+    }
     try:
-        # Recalls
         resp = requests.get(NHTSA_RECALLS_URL, params={
             "make": make, "model": model, "modelYear": year
         }, timeout=10)
@@ -278,14 +256,13 @@ def get_nhtsa_data(year, make, model):
     except:
         pass
     try:
-        # Complaints
         resp = requests.get(NHTSA_COMPLAINTS, params={
             "make": make, "model": model, "modelYear": year
         }, timeout=10)
         if resp.status_code == 200:
             complaints = resp.json().get("results", [])
             result["complaint_count"] = len(complaints)
-            # Count by component
+            result["complaints_raw"] = complaints[:20]
             areas = {}
             for c in complaints:
                 comp = c.get("components", "Unknown")
@@ -293,105 +270,187 @@ def get_nhtsa_data(year, make, model):
             result["top_complaint_areas"] = sorted(areas.items(), key=lambda x: -x[1])[:5]
     except:
         pass
+
+    # Calculate risk score (0-10, lower = safer)
+    recall_risk = min(5, result["recall_count"] * 0.8)
+    complaint_risk = min(5, result["complaint_count"] * 0.05)
+    # Check for severe recalls
+    severe_keywords = ["fire", "crash", "injury", "death", "loss of control", "brake failure", "fuel leak"]
+    severe_count = 0
+    for r in result["recalls"]:
+        text = (r.get("consequence", "") + " " + r.get("summary", "")).lower()
+        if any(kw in text for kw in severe_keywords):
+            severe_count += 1
+    severity_bonus = min(3, severe_count * 1.5)
+
+    raw_score = recall_risk + complaint_risk + severity_bonus
+    result["risk_score"] = round(min(10, max(0, raw_score)), 1)
+
+    if result["risk_score"] <= 2:
+        result["risk_label"] = "Low Risk"
+    elif result["risk_score"] <= 4:
+        result["risk_label"] = "Moderate"
+    elif result["risk_score"] <= 6:
+        result["risk_label"] = "Elevated"
+    elif result["risk_score"] <= 8:
+        result["risk_label"] = "High Risk"
+    else:
+        result["risk_label"] = "Critical"
+
     return result
+
+
+# ==============================================================
+# DEALER REPUTATION (via Exa scraping)
+# ==============================================================
+
+def get_dealer_reputation(dealer_name, dealer_location=None):
+    """Scrape dealer reviews from the web and summarize."""
+    if not EXA_API_KEY or not dealer_name:
+        return None
+    try:
+        query = f"{dealer_name} reviews"
+        if dealer_location:
+            query += f" {dealer_location}"
+
+        resp = requests.post(EXA_SEARCH_URL, json={
+            "query": query,
+            "numResults": 5,
+            "type": "keyword",
+            "contents": {"text": {"maxCharacters": 2000}}
+        }, headers={"x-api-key": EXA_API_KEY, "Content-Type": "application/json"}, timeout=15)
+
+        if resp.status_code == 200:
+            results = resp.json().get("results", [])
+            review_texts = []
+            for r in results:
+                text = r.get("text", "")
+                if text:
+                    review_texts.append(text[:500])
+
+            if review_texts:
+                return {"raw_reviews": review_texts, "source_count": len(review_texts)}
+    except Exception as e:
+        log.warning(f"Dealer reputation scrape failed: {e}")
+    return None
 
 
 
 # ==============================================================
-# AI SYSTEM PROMPT - The brain of AskCarBuddy v2
+# AI SYSTEM PROMPT v3 — Enhanced intelligence engine
 # ==============================================================
 
 ANALYSIS_SYSTEM_PROMPT = """You are AskCarBuddy — a trusted car-expert friend with 20 years of dealership experience.
 
 PHILOSOPHY: The user found a car they LIKE. Your job is NOT to talk them out of it.
 Your job is to arm them with intelligence so they can buy it CONFIDENTLY and SMARTLY.
-
-Think: "Great pick — here's everything you need to know to own this car and love it."
+Energy: "Great pick — here's everything you need to know to own this car and love it."
 
 TONE: Warm, confident, knowledgeable. Like a friend who happens to be a car expert.
-NOT: Salesy, fear-mongering, or generic. Never say "check the tires." Be SPECIFIC.
+NEVER: Salesy, fear-mongering, adversarial, or generic. Be SPECIFIC to THIS car.
 
 CRITICAL RULES:
 1. Be SPECIFIC to this exact vehicle — reference the actual year, make, model, trim, generation, engine.
-2. Known issues must be REAL documented issues for this specific generation/engine/transmission.
+2. Known issues must be REAL documented issues for this specific generation/engine/transmission combo.
 3. Frame everything as HELPFUL, not scary. "Here's what to know" not "here's what could go wrong."
-4. Smart questions should help the buyer feel PREPARED, not adversarial toward the dealer.
-5. Cost of ownership should be realistic and practical — what will this car actually cost to run?
-6. If the car is a genuinely good find, SAY SO enthusiastically. If it has real concerns, flag them honestly but constructively.
-7. The out-the-door section should prepare them for what they'll actually pay — no surprises at the desk.
-8. Include SPECIFIC maintenance milestones based on the car's current mileage.
+4. If the car is genuinely good, say so enthusiastically. If it has real concerns, flag them honestly but constructively.
+5. The risk score context should explain what the numbers MEAN, not just repeat them.
+6. Dealer reputation should help the buyer feel prepared, not suspicious.
+7. Cost estimates should be realistic ranges, not worst-case scare numbers.
+8. Pro tips should be genuinely useful insider knowledge a car salesperson would know.
+9. NEVER include negotiation scripts. NEVER tell them to "walk away." Help them buy THIS car smartly.
+10. The depreciation section should frame value retention positively when possible.
 
 Return VALID JSON matching this exact structure:
 {
   "buy_score": {
     "score": <1-10>,
     "label": "<Great Find|Solid Pick|Worth a Look|Proceed with Caution|Think Twice>",
-    "one_liner": "<one warm sentence verdict — encourage if deserved>"
+    "one_liner": "<warm one-sentence verdict — encourage if deserved>"
   },
   "at_a_glance": {
     "best_thing": "<the single best thing about this specific car>",
-    "know_before_you_go": "<the single most important thing to verify before buying>"
+    "know_before_you_go": "<the single most important thing to verify>"
+  },
+  "risk_assessment": {
+    "score": <0-10 float, use the NHTSA risk score provided>,
+    "label": "<Low Risk|Moderate|Elevated|High Risk|Critical>",
+    "summary": "<2-3 sentences explaining what the risk data means for THIS buyer — be honest but not alarming>",
+    "key_flags": ["<specific flag if any — e.g. 'Airbag recall — free fix at any Toyota dealer'>"],
+    "reassurances": ["<things that are GOOD about this car's safety/reliability record>"]
+  },
+  "deal_score": {
+    "score": <1-10, use the deal score from market data>,
+    "savings_vs_market": "<e.g. '$1,200 below median' or '$500 above average'>",
+    "context": "<1-2 sentences on why this price is what it is — mileage, condition, location factors>",
+    "verdict": "<Great Deal|Good Value|Fair Price|Slightly High|Overpriced>"
   },
   "market_intel": {
-    "summary": "<2-3 sentences on where this price sits vs market — factual, not judgmental>",
+    "summary": "<2-3 sentences on where this price sits vs market — factual, helpful>",
     "price_position": "<below_market|competitive|market_price|above_market>",
-    "value_factors": ["<why this price makes sense OR what's driving it up/down>"]
+    "supply_demand": "<how many similar cars are available and what that means for the buyer>",
+    "value_factors": ["<factors driving this price up or down>"]
   },
   "what_to_know": {
-    "generation_overview": "<1-2 sentences about this specific generation — reputation, strengths>",
+    "generation_overview": "<1-2 sentences about this specific generation — reputation, strengths, what owners love>",
     "known_quirks": [
       {
-        "item": "<specific known issue or quirk for this generation>",
-        "severity": "<minor_quirk|worth_checking|important|serious>",
-        "context": "<honest context — how common, how expensive IF it happens, what to look for>",
-        "what_to_do": "<specific actionable step the buyer should take>"
+        "item": "<specific known issue for this generation>",
+        "severity": "<minor_quirk|worth_checking|important>",
+        "context": "<how common, how expensive IF it happens>",
+        "what_to_do": "<specific actionable step>"
       }
     ],
+    "what_owners_love": ["<things real owners consistently praise about this car>"],
     "maintenance_upcoming": [
       {
-        "service": "<specific maintenance item due based on current mileage>",
+        "service": "<maintenance item based on current mileage>",
         "typical_cost": "<cost range>",
         "urgency": "<due_now|soon|within_6_months|within_a_year>"
       }
     ]
   },
+  "dealer_intel": {
+    "trust_summary": "<1-2 sentences about the dealer based on available data — helpful framing>",
+    "tips_for_visit": ["<specific tip for dealing with THIS dealer — e.g. 'ask about their return policy'>"]
+  },
   "your_game_plan": {
-    "before_you_visit": ["<specific prep step 1>", "<step 2>", "<step 3>"],
+    "before_you_visit": ["<specific prep step>"],
     "at_the_dealer": [
       {
-        "ask": "<specific question to ask>",
+        "ask": "<specific question>",
         "why": "<why this matters — insider knowledge>",
-        "good_sign": "<what a reassuring answer sounds like>",
-        "heads_up": "<what answer means you should dig deeper>"
+        "good_sign": "<reassuring answer>",
+        "heads_up": "<answer that means dig deeper>"
       }
     ],
-    "on_the_test_drive": ["<specific thing to check/feel/listen for on THIS car>"],
+    "on_the_test_drive": ["<specific thing to check on THIS car>"],
     "at_the_desk": {
-      "expected_otd": "<estimated out-the-door price range>",
-      "fees_to_expect": ["<legitimate fee and typical amount>"],
-      "fees_to_question": ["<fee that's sometimes inflated + what it should cost>"],
-      "financing_tip": "<one specific financing tip for this purchase>"
+      "expected_otd": "<estimated out-the-door range>",
+      "fees_to_expect": ["<legitimate fee + typical amount>"],
+      "fees_to_question": ["<fee sometimes inflated + fair amount>"],
+      "financing_tip": "<one specific financing tip>"
     }
   },
   "cost_to_own": {
-    "monthly_fuel": "<estimated monthly fuel cost at current gas prices>",
-    "annual_insurance_range": "<estimated annual insurance range>",
-    "annual_maintenance": "<estimated annual maintenance cost>",
-    "total_annual_estimate": "<total estimated annual running cost range>",
-    "ownership_verdict": "<one sentence on whether this is cheap/average/expensive to own>"
+    "monthly_fuel": "<estimated based on MPG + current gas prices>",
+    "annual_insurance_range": "<estimated range for this vehicle class>",
+    "annual_maintenance": "<estimated based on mileage and age>",
+    "depreciation_outlook": "<how well this car holds value — frame positively when true>",
+    "total_monthly_estimate": "<all-in monthly cost estimate (fuel + insurance + maintenance averaged)>",
+    "ownership_verdict": "<one sentence — is this cheap/average/expensive to own for its class?>"
   },
-  "pro_tips": ["<genuinely useful insider tip specific to THIS car>", "<tip 2>", "<tip 3>"]
+  "pro_tips": ["<genuinely useful insider tip specific to THIS car — not generic>"]
 }
 """
 
 
 
 # ==============================================================
-# AI ANALYSIS GENERATOR
+# AI ANALYSIS GENERATOR (Enhanced)
 # ==============================================================
 
-def generate_analysis(vehicle_info, market_data, nhtsa_data, listing_text=""):
-    """Generate the full intelligence brief using Groq AI."""
+def generate_analysis(vehicle_info, market_data, nhtsa_data, dealer_rep, listing_text=""):
     context_parts = []
 
     v = vehicle_info
@@ -411,31 +470,51 @@ def generate_analysis(vehicle_info, market_data, nhtsa_data, listing_text=""):
         context_parts.append(f"MPG: {v['mpgCity']} city / {v['mpgHighway']} hwy")
     if v.get("bodyType"): context_parts.append(f"BODY: {v['bodyType']}")
 
+    # MARKET DATA (Enhanced with deal score)
     if market_data:
         m = market_data
         context_parts.append(f"\nMARKET DATA:")
-        context_parts.append(f"  Regional average price: ${m['avg_price']:,}")
+        context_parts.append(f"  Median market price: ${m['median_price']:,}")
+        context_parts.append(f"  Average market price: ${m['avg_price']:,}")
         context_parts.append(f"  Price range: ${m['min_price']:,} - ${m['max_price']:,}")
         if m.get('percentile') is not None:
-            context_parts.append(f"  This listing is at the {m['percentile']}th percentile (higher = more expensive)")
-        context_parts.append(f"  Comparable listings found: {m['comp_count']} (total market: {m['total_market']})")
-        context_parts.append(f"  Demand score: {m['demand_score']}/10")
+            context_parts.append(f"  This listing is at the {m['percentile']}th price percentile (lower = cheaper)")
+        if m.get('deal_score') is not None:
+            context_parts.append(f"  DEAL SCORE: {m['deal_score']}/10 (10 = best deal)")
+        if m.get('savings') is not None:
+            if m['savings'] > 0:
+                context_parts.append(f"  SAVINGS: ${m['savings']:,} BELOW median market price")
+            elif m['savings'] < 0:
+                context_parts.append(f"  PREMIUM: ${abs(m['savings']):,} ABOVE median market price")
+            else:
+                context_parts.append(f"  PRICE: At median market price")
+        context_parts.append(f"  Comparable listings: {m['comp_count']} (total market supply: {m['total_market']})")
 
+    # NHTSA SAFETY DATA (Enhanced with risk score)
     if nhtsa_data:
         n = nhtsa_data
-        context_parts.append(f"\nSAFETY DATA (NHTSA):")
-        context_parts.append(f"  Recalls: {n['recall_count']}")
-        context_parts.append(f"  Consumer complaints: {n['complaint_count']}")
+        context_parts.append(f"\nSAFETY & RISK DATA (NHTSA):")
+        context_parts.append(f"  RISK SCORE: {n['risk_score']}/10 ({n['risk_label']}) — lower is safer")
+        context_parts.append(f"  Open recalls: {n['recall_count']}")
+        context_parts.append(f"  Consumer complaints filed: {n['complaint_count']}")
         if n.get("top_complaint_areas"):
             areas = ", ".join(f"{area} ({count})" for area, count in n["top_complaint_areas"][:5])
             context_parts.append(f"  Top complaint areas: {areas}")
         if n.get("recalls"):
-            for r in n["recalls"][:3]:
-                context_parts.append(f"  Recall: {r['component']} - {r['summary'][:120]}")
+            for r in n["recalls"][:5]:
+                context_parts.append(f"  Recall: {r['component']} - {r['summary'][:150]}")
+                if r.get("remedy"):
+                    context_parts.append(f"    Remedy: {r['remedy'][:100]}")
 
-    # Include raw listing text (truncated) for max context
+    # DEALER REPUTATION
+    if dealer_rep and dealer_rep.get("raw_reviews"):
+        context_parts.append(f"\nDEALER REPUTATION DATA ({dealer_rep['source_count']} sources found):")
+        for i, review in enumerate(dealer_rep["raw_reviews"][:3]):
+            context_parts.append(f"  Review {i+1}: {review[:300]}")
+
+    # RAW LISTING TEXT
     if listing_text:
-        context_parts.append(f"\nRAW LISTING TEXT (from dealer page):")
+        context_parts.append(f"\nRAW LISTING TEXT:")
         context_parts.append(listing_text[:3000])
 
     context = "\n".join(context_parts)
@@ -448,12 +527,12 @@ def generate_analysis(vehicle_info, market_data, nhtsa_data, listing_text=""):
                 {"role": "user", "content": f"Analyze this vehicle listing and generate a complete buyer intelligence brief:\n\n{context}"}
             ],
             "temperature": 0.3,
-            "max_tokens": 3000,
+            "max_tokens": 4000,
             "response_format": {"type": "json_object"}
         }, headers={
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json"
-        }, timeout=30)
+        }, timeout=45)
 
         if resp.status_code == 200:
             content = resp.json()["choices"][0]["message"]["content"]
@@ -468,20 +547,16 @@ def generate_analysis(vehicle_info, market_data, nhtsa_data, listing_text=""):
 
 
 # ==============================================================
-# ORCHESTRATOR
+# ORCHESTRATOR (Enhanced)
 # ==============================================================
 
 def analyze_listing(input_data):
-    """Main orchestrator. URL in -> full report out."""
     vehicle = {}
     listing_text = ""
 
-    # Step 0: If URL, scrape it for raw content
     if input_data.get("url"):
         url_info = parse_listing_url(input_data["url"])
         vehicle.update(url_info)
-
-        # Scrape via Exa for full page content
         scrape_result = scrape_listing_exa(input_data["url"])
         if isinstance(scrape_result, tuple):
             listing_text, images = scrape_result
@@ -489,24 +564,20 @@ def analyze_listing(input_data):
                 vehicle["photos"] = images[:5]
         else:
             listing_text = scrape_result
-
-        # Extract structured data from scraped text
         if listing_text:
             extracted = extract_vehicle_from_text(listing_text)
-            for k, v in extracted.items():
-                if v and not vehicle.get(k):
-                    vehicle[k] = v
+            for k, val in extracted.items():
+                if val and not vehicle.get(k):
+                    vehicle[k] = val
 
-    # Override with user-provided fields
     for field in ["year", "make", "model", "trim", "price", "mileage", "vin", "zip", "color", "dealer_name"]:
         if input_data.get(field):
             vehicle[field] = input_data[field]
 
-    # Validate minimum
     if not vehicle.get("make") or not vehicle.get("model"):
-        return {"error": "Couldn't identify the car from that URL. Try pasting a different listing, or enter the details manually."}
+        return {"error": "Couldn't identify the car. Try a different listing URL or enter details manually."}
 
-    # VIN lookup for rich data
+    # VIN enrichment
     if vehicle.get("vin") and AUTODEV_API_KEY:
         vin_data = lookup_vin_autodev(vehicle["vin"])
         if vin_data:
@@ -518,25 +589,22 @@ def analyze_listing(input_data):
                 vehicle["dealer_name"] = vin_data["dealerName"]
             if vin_data.get("dealerPhone"):
                 vehicle["dealer_phone"] = vin_data["dealerPhone"]
+            if vin_data.get("dealerWebsite"):
+                vehicle["dealer_website"] = vin_data["dealerWebsite"]
             if vin_data.get("photoUrls") and not vehicle.get("photos"):
-                vehicle["photos"] = vin_data["photoUrls"][:5]
+                vehicle["photos"] = vin_data["photoUrls"][:8]
             if vin_data.get("displayColor") and not vehicle.get("color"):
                 vehicle["color"] = vin_data["displayColor"]
 
     # Normalize types
-    if vehicle.get("year"):
-        try: vehicle["year"] = int(vehicle["year"])
-        except: pass
-    if vehicle.get("price"):
-        try: vehicle["price"] = int(str(vehicle["price"]).replace(",", "").replace("$", ""))
-        except: pass
-    if vehicle.get("mileage"):
-        try: vehicle["mileage"] = int(str(vehicle["mileage"]).replace(",", ""))
-        except: pass
+    for field in ["year", "price", "mileage"]:
+        if vehicle.get(field):
+            try: vehicle[field] = int(str(vehicle[field]).replace(",", "").replace("$", ""))
+            except: pass
 
     log.info(f"Analyzing: {vehicle.get('year')} {vehicle.get('make')} {vehicle.get('model')} - ${vehicle.get('price', '?')}")
 
-    # Step 1: Market comps
+    # Parallel data gathering
     market_data = None
     if vehicle.get("make") and vehicle.get("model"):
         market_data = get_market_comps(
@@ -544,28 +612,47 @@ def analyze_listing(input_data):
             vehicle.get("trim"), vehicle.get("zip") or DEFAULT_ZIP, vehicle.get("price")
         )
 
-    # Step 2: NHTSA safety data
     nhtsa_data = None
     if vehicle.get("year") and vehicle.get("make") and vehicle.get("model"):
         nhtsa_data = get_nhtsa_data(vehicle["year"], vehicle["make"], vehicle["model"])
 
-    # Step 3: AI analysis
-    analysis = generate_analysis(vehicle, market_data, nhtsa_data, listing_text)
+    dealer_rep = None
+    if vehicle.get("dealer_name"):
+        dealer_rep = get_dealer_reputation(vehicle["dealer_name"], vehicle.get("zip"))
+
+    # AI analysis
+    analysis = generate_analysis(vehicle, market_data, nhtsa_data, dealer_rep, listing_text)
 
     if not analysis:
         return {"error": "Analysis generation failed. Please try again."}
 
     return {
         "vehicle": vehicle,
-        "market_data": market_data,
+        "market_data": {
+            "avg_price": market_data["avg_price"] if market_data else None,
+            "median_price": market_data["median_price"] if market_data else None,
+            "min_price": market_data["min_price"] if market_data else None,
+            "max_price": market_data["max_price"] if market_data else None,
+            "percentile": market_data["percentile"] if market_data else None,
+            "deal_score": market_data["deal_score"] if market_data else None,
+            "savings": market_data["savings"] if market_data else None,
+            "comp_count": market_data["comp_count"] if market_data else 0,
+            "total_market": market_data["total_market"] if market_data else 0,
+            "price_buckets": market_data["price_buckets"] if market_data else [],
+            "prices_sample": market_data["prices_sample"] if market_data else [],
+        } if market_data else None,
         "nhtsa_data": {
             "recall_count": nhtsa_data["recall_count"] if nhtsa_data else 0,
             "complaint_count": nhtsa_data["complaint_count"] if nhtsa_data else 0,
+            "risk_score": nhtsa_data["risk_score"] if nhtsa_data else 0,
+            "risk_label": nhtsa_data["risk_label"] if nhtsa_data else "Unknown",
         },
         "analysis": analysis,
         "generated_at": datetime.utcnow().isoformat(),
-        "report_id": hashlib.md5(json.dumps(vehicle, sort_keys=True, default=str).encode()).hexdigest()[:12]
+        "report_id": hashlib.md5(json.dumps(vehicle, sort_keys=True, default=str).encode()).hexdigest()[:12],
+        "version": "3.0.0"
     }
+
 
 
 # ==============================================================
@@ -574,7 +661,6 @@ def analyze_listing(input_data):
 
 @app.route("/")
 def home():
-    """Serve the frontend."""
     html_path = os.path.join(os.path.dirname(__file__), "index.html")
     if os.path.exists(html_path):
         with open(html_path) as f:
@@ -583,7 +669,6 @@ def home():
 
 @app.route("/api/analyze", methods=["POST"])
 def api_analyze():
-    """Main analysis endpoint."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -598,24 +683,27 @@ def api_analyze():
 
 @app.route("/api/parse-url", methods=["POST"])
 def api_parse_url():
-    """Parse a listing URL and return extracted vehicle info."""
     data = request.get_json()
     url = data.get("url", "")
     if not url:
         return jsonify({"error": "No URL provided"}), 400
-    info = parse_listing_url(url)
-    return jsonify(info)
+    return jsonify(parse_listing_url(url))
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "service": "AskCarBuddy", "version": "2.0.0"})
+    return jsonify({
+        "status": "ok",
+        "service": "AskCarBuddy",
+        "version": "3.0.0",
+        "apis": {
+            "groq": bool(GROQ_API_KEY),
+            "autodev": bool(AUTODEV_API_KEY),
+            "exa": bool(EXA_API_KEY)
+        }
+    })
 
-
-# ==============================================================
-# MAIN
-# ==============================================================
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    log.info(f"AskCarBuddy v2 starting on port {port}")
+    log.info(f"AskCarBuddy v3 starting on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
