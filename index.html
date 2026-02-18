@@ -112,7 +112,7 @@ h4.section-head{color:var(--accent);font-size:0.9rem;margin:16px 0 8px;text-tran
     <input type="url" class="url-input" id="urlInput" placeholder="https://www.dealer.com/used/2024-honda-civic..." autocomplete="off">
     <button class="analyze-btn" id="analyzeBtn" onclick="go()">Analyze This Car</button>
   </div>
-  <div class="loading" id="loading"><div class="spinner"></div><div class="loading-text">Analyzing your listing...</div><div class="loading-sub">Scraping page · Pulling market comps · Running safety checks · Generating intelligence brief</div></div>
+  <div class="loading" id="loading"><div class="spinner"></div><div class="loading-text">Analyzing your listing...</div><div class="loading-sub">Scraping listing · VIN decode · Market comps · Safety data · Web research · AI analysis</div></div>
   <div class="error" id="error"></div>
   <div class="report" id="report"></div>
 </div>
@@ -196,13 +196,13 @@ if(co.monthly_fuel||co.annual_insurance_estimate){h+=`<div class="card"><div cla
 <div class="cost-item"><div class="cost-val">${co.monthly_fuel||'—'}</div><div class="cost-lbl">Monthly Fuel</div></div>
 <div class="cost-item"><div class="cost-val">${co.annual_insurance_estimate||co.annual_insurance_range||'—'}</div><div class="cost-lbl">Annual Insurance</div></div>
 <div class="cost-item"><div class="cost-val">${co.annual_maintenance||'—'}</div><div class="cost-lbl">Annual Maint.</div></div></div>`;
-if(co.first_year_maintenance_budget)h+=`<p style="margin-top:12px;font-size:0.88rem;color:var(--text2)">📋 <strong>Year 1 budget:</strong> ${co.first_year_maintenance_budget}</p>`;
+if((co.first_year_budget||co.first_year_maintenance_budget))h+=`<p style="margin-top:12px;font-size:0.88rem;color:var(--text2)">📋 <strong>Year 1 budget:</strong> ${(co.first_year_budget||co.first_year_maintenance_budget)}</p>`;
 if(co.depreciation_outlook)h+=`<p style="margin-top:8px;font-size:0.88rem">📉 ${co.depreciation_outlook}</p>`;
-if(co.total_monthly_running_cost)h+=`<div class="otd-box" style="margin-top:12px"><div class="otd-lbl">Estimated Monthly Running Cost</div><div class="otd-price" style="font-size:1.4rem">${co.total_monthly_running_cost}</div></div>`;
+if((co.total_monthly_cost||co.total_monthly_running_cost))h+=`<div class="otd-box" style="margin-top:12px"><div class="otd-lbl">Estimated Monthly Running Cost</div><div class="otd-price" style="font-size:1.4rem">${(co.total_monthly_cost||co.total_monthly_running_cost)}</div></div>`;
 if(co.verdict)h+=`<p style="text-align:center;color:var(--text2);font-size:0.88rem;margin-top:6px">${co.verdict}</p>`;
 h+=`</div>`}
 // Tips
 if(tips.length){h+=`<div class="card"><div class="card-title"><span class="icon">⭐</span>Pro Tips</div>`;tips.forEach(t=>{h+=`<div class="tip">${t}</div>`});h+=`</div>`}
-h+=`<div style="text-align:center;padding:28px;color:#3f3f46;font-size:0.75rem">AskCarBuddy v3.1 · Report #${d.report_id||''} · ${new Date(d.generated_at).toLocaleDateString()}<br>Not financial advice. Always get a pre-purchase inspection.</div>`;
+h+=`<div style="text-align:center;padding:28px;color:#3f3f46;font-size:0.75rem">AskCarBuddy v4.0 · Report #${d.report_id||''} · ${new Date(d.generated_at).toLocaleDateString()}<br>Not financial advice. Always get a pre-purchase inspection.</div>`;
 return h}
 </script></body></html>
