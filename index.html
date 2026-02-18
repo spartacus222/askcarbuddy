@@ -412,7 +412,8 @@ function goBack(){
 document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
 
 function osColor(s){return s>=8?'var(--green)':s>=6?'var(--amber)':s>=4?'#f97316':'var(--red)'}
-function dpColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('steal')>=0||l.indexOf('well below')>=0)return'var(--green)';if(l.indexOf('below')>=0||l.indexOf('at markfunction render(d){
+function dpColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('steal')>=0||l.indexOf('well below')>=0)return'var(--green)';if(l.indexOf('below')>=0||l.indexOf('at market')>=0)return'var(--amber)';if(l.indexOf('above')>=0||l.indexOf('over')>=0)return'var(--red)';return'var(--text2)'}
+function render(d){
 var v=d.vehicle||{},a=d.analysis||{};
 var os=a.overall_score||{},dp=a.deal_position||{},mr=a.mechanical_risk||{};
 var ag=a.at_a_glance||{},ni=a.nhtsa_intel||{},wtk=a.what_to_know||{};
@@ -513,14 +514,6 @@ if(wa.comparable_range){h+='<p class="walk-range">'+(wa.comparable_range)+'</p>'
 if(wa.context){h+='<p class="sub-text">'+(wa.context)+'</p>'}
 h+='</div>'}
 if(tips&&tips.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCA1</span>Insider Tips</div>';
-tips.forEach(function(t){h+='<div class="tip">'+t+'</div>'});h+='</div>'}
-return h;
-}">'+(co.total_monthly_cost)+'</div><div class="otd-lbl">Estimated Total Monthly Cost</div></div>'}
-if(co.first_year_budget){h+='<p style="color:var(--text2);font-size:0.88rem;margin-top:10px">'+(co.first_year_budget)+'</p>'}
-if(co.depreciation_outlook){h+='<p style="color:var(--text2);font-size:0.88rem;margin-top:6px">'+(co.depreciation_outlook)+'</p>'}
-if(co.verdict){h+='<p style="font-weight:600;margin-top:10px;font-size:0.92rem">'+(co.verdict)+'</p>'}
-h+='</div>'}
-if(tips&&tips.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCA1</span>Pro Tips</div>';
 tips.forEach(function(t){h+='<div class="tip">'+t+'</div>'});h+='</div>'}
 return h;
 }
