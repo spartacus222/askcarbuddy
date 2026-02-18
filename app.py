@@ -359,11 +359,24 @@ def parse_listing_url(url):
 # ==============================================================
 
 def extract_vin_from_url(url):
-    """Extract VIN from URL path or query params."""
+    """Extract VIN from URL path or query params with validation."""
+    # VINs are 17 chars but must start with a valid WMI (World Manufacturer Identifier)
+    # Position 1: country (1-5=NA, J=Japan, K=Korea, S-W=Europe, etc.)
+    # Position 9: check digit (0-9 or X)
+    # Position 10: model year (A-Y excluding I,O,Q,U,Z or 1-9)
     vin_match = re.search(r'[A-HJ-NPR-Z0-9]{17}', url, re.IGNORECASE)
     if vin_match:
         candidate = vin_match.group(0).upper()
         if re.match(r'^[A-HJ-NPR-Z0-9]{17}$', candidate):
+            # Basic VIN validation: position 10 must be valid model year code
+            year_char = candidate[9]
+            valid_year_chars = set('ABCDEFGHJKLMNPRSTVWXY123456789')
+            if year_char not in valid_year_chars:
+                return None
+            # Position 1 must be a valid country code (not a hex-only sequence)
+            # Reject if it looks like a hex hash (all chars are 0-9, A-F)
+            if all(c in '0123456789ABCDEF' for c in candidate):
+                return None  # Likely a hex hash, not a VIN
             return candidate
     return None
 
@@ -976,10 +989,11 @@ def generate_analysis(vehicle_info, market_data, nhtsa_data, dealer_rep, listing
     # NHTSA DATA
     if nhtsa_data:
         n = nhtsa_data
-        context_parts.append(f"\nNHTSA SAFETY DATA:")
+        context_parts.append(f"\nNHTSA SAFETY DATA (for {v.get('year','')} {v.get('make','')} {v.get('model','')} MODEL YEAR — not VIN-specific):")
+        context_parts.append(f"  NOTE: These are recalls/complaints for ALL {v.get('year','')} {v.get('make','')} {v.get('model','')} vehicles, not confirmed for this specific VIN.")
         context_parts.append(f"  Risk score: {n['risk_score']}/10 ({n['risk_label']})")
-        context_parts.append(f"  Recalls: {n['recall_count']} (recalls = FREE manufacturer fixes = GOOD)")
-        context_parts.append(f"  Complaints: {n['complaint_count']} total filed")
+        context_parts.append(f"  Recalls for model year: {n['recall_count']} (recalls = FREE manufacturer fixes)")
+        context_parts.append(f"  Complaints for model year: {n['complaint_count']} total filed")
         if n.get("top_complaint_areas"):
             areas = ", ".join(f"{a} ({c})" for a, c in n["top_complaint_areas"][:8])
             context_parts.append(f"  Breakdown: {areas}")
@@ -1020,6 +1034,8 @@ IMPORTANT:
 - Use the web research data to identify REAL documented issues for this generation
 - Zero generic advice allowed
 - CRITICAL: Only cite numbers, stats, recall IDs, complaint counts, and market data that appear in the DATA CONTEXT below. If a data section says 0 recalls, report 0 recalls. If no market data was provided, say market data is unavailable. DO NOT INVENT ANY STATISTICS.
+- RECALL RULE: NHTSA recall data is for the MODEL YEAR, not this specific VIN. Do NOT say "this car has a recall" — instead say "X recalls exist for the [year] [make] [model] model year. Recommend checking this specific VIN at nhtsa.gov/recalls." Frame it as general awareness, not a confirmed issue with this car.
+- If NHTSA data shows 0 recalls and 0 complaints, say exactly that — do NOT mention any recall topics in the biggest_question or elsewhere.
 
 {context}
 
@@ -1202,11 +1218,12 @@ def analyze_listing(input_data):
             "price_buckets": market_data["price_buckets"] if market_data else [],
         } if market_data else None,
         "nhtsa_data": {
-            "recall_count": nhtsa_data["recall_count"] if nhtsa_data else 0,
-            "complaint_count": nhtsa_data["complaint_count"] if nhtsa_data else 0,
-            "risk_score": nhtsa_data["risk_score"] if nhtsa_data else 0,
-            "risk_label": nhtsa_data["risk_label"] if nhtsa_data else "Unknown",
+            "recall_count": nhtsa_data["recall_count"] if nhtsa_data else None,
+            "complaint_count": nhtsa_data["complaint_count"] if nhtsa_data else None,
+            "risk_score": nhtsa_data["risk_score"] if nhtsa_data else None,
+            "risk_label": nhtsa_data["risk_label"] if nhtsa_data else "No data",
             "top_complaint_areas": nhtsa_data["top_complaint_areas"][:5] if nhtsa_data else [],
+            "data_source": "NHTSA model-year lookup (not VIN-specific)" if nhtsa_data else "unavailable",
         },
         "analysis": analysis,
         "generated_at": datetime.utcnow().isoformat(),
