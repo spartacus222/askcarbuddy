@@ -382,74 +382,75 @@ function dc(s){return s>=8?'var(--green)':s>=6?'var(--blue)':s>=4?'var(--amber)'
 function render(d){
 const v=d.vehicle||{},a=d.analysis||{},bs=a.buy_score||{},ag=a.at_a_glance||{},ra=a.risk_assessment||{},da=a.deal_analysis||{},wtk=a.what_to_know||{},gp=a.your_game_plan||{},co=a.cost_to_own||{},tips=a.pro_tips||[];
 const md=d.market_data||{},nd=d.nhtsa_data||{};
-let h='<button class="back-btn" onclick="goBack()">← Back to search</button>';
-h+=`<div class="score-banner"><div class="vehicle-title">${v.year||''} ${v.make||''} ${v.model||''} ${v.trim||''}</div>
-<div class="vehicle-meta">${v.price?'$'+v.price.toLocaleString():''} · ${v.mileage?v.mileage.toLocaleString()+' mi':''} · ${v.color||''}</div>
-<div class="score-big">${bs.score||'?'}/10</div>
-<div class="score-label">${bs.label||''}</div><div class="score-liner">${bs.one_liner||''}</div></div>`;
-const riskS=nd.risk_score!=null?nd.risk_score:0,dealS=md.deal_score||'—';
-h+=`<div class="score-trio">
-<div class="trio-item"><div class="trio-val" style="color:${rc(riskS)}">${riskS}/10</div><div class="trio-name">Risk</div><div class="trio-sub">${nd.risk_label||''}</div></div>
-<div class="trio-item"><div class="trio-val" style="color:${sc(bs.score||5)}">${bs.score||'?'}/10</div><div class="trio-name">Buy Score</div><div class="trio-sub">${bs.label||''}</div></div>
-<div class="trio-item"><div class="trio-val" style="color:${dc(dealS)}">${dealS}/10</div><div class="trio-name">Deal</div><div class="trio-sub">${da.deal_label||''}</div></div></div>`;
-if(ag.best_thing||ag.know_before_you_go){h+=`<div class="card"><div class="card-title"><span class="icon">⚡</span>At a Glance</div><div class="glance-grid">
-<div class="glance-item"><div class="glance-label">Best Thing</div><div class="glance-value">${ag.best_thing||''}</div></div>
-<div class="glance-item"><div class="glance-label">Know Before You Go</div><div class="glance-value">${ag.know_before_you_go||''}</div></div></div></div>`}
-if(ra.score_context){h+=`<div class="card"><div class="card-title"><span class="icon">🛡️</span>Risk Assessment</div>
-<p style="color:var(--text2);font-size:0.92rem;margin-bottom:14px">${ra.score_context}</p>`;
-(ra.key_reassurances||[]).forEach(r=>{h+=`<div class="flag-good">✓ ${r}</div>`});
-(ra.items_to_verify||[]).forEach(r=>{h+=`<div class="flag-verify">◉ ${r}</div>`});h+='</div>'}
-if(da.price_vs_market){h+=`<div class="card"><div class="card-title"><span class="icon">📊</span>Deal Analysis</div>`;
-if(md&&md.price_buckets&&md.price_buckets.length){h+=`<div class="chart-container">`;
-const mx=Math.max(...md.price_buckets.map(b=>b.count));
-md.price_buckets.forEach(b=>{const pct=(b.count/mx)*100;const act=v.price>=b.min&&v.price<b.max;
-h+=`<div class="chart-bar${act?' active':''}" style="height:${Math.max(4,pct)}%" title="$${b.min.toLocaleString()}-$${b.max.toLocaleString()}: ${b.count} cars"></div>`});
-h+=`</div><div class="chart-labels"><span>$${md.min_price?.toLocaleString()||'?'}</span><span>$${md.max_price?.toLocaleString()||'?'}</span></div>`}
-h+=`<p style="margin-top:14px;font-size:0.92rem">${da.price_vs_market}</p>
-<p style="color:var(--text2);font-size:0.88rem;margin-top:8px">${da.why_this_price||''}</p>
-<p style="margin-top:8px;font-weight:600;font-size:0.92rem">${da.value_verdict||''}</p></div>`}
-if(wtk.generation_overview){h+=`<div class="card"><div class="card-title"><span class="icon">🔍</span>What to Know</div>
-<p style="color:var(--text2);font-size:0.92rem;margin-bottom:14px">${wtk.generation_overview}</p>`;
-if(wtk.what_owners_love?.length){h+=`<h4 class="section-head">What Owners Love</h4><div style="margin-bottom:14px">`;
-wtk.what_owners_love.forEach(l=>{h+=`<span class="love-tag">${l}</span>`});h+=`</div>`}
-if(wtk.known_quirks?.length){h+=`<h4 class="section-head">Known Quirks</h4>`;
-wtk.known_quirks.forEach(q=>{h+=`<div class="quirk"><div class="quirk-head"><span class="quirk-name">${q.item||''}</span><span class="sev sev-${(q.severity||'').replace(/\s/g,'_')}">${q.severity||''}</span></div>
-<div class="quirk-detail">${q.reality_check||''}</div><div class="quirk-action">→ ${q.what_to_do||''}</div></div>`})}
-if(wtk.big_ticket_watch){h+=`<h4 class="section-head">Big Ticket Watch</h4><div class="big-ticket">${wtk.big_ticket_watch}</div>`}
-if(wtk.maintenance_now?.length){h+=`<h4 class="section-head">Maintenance Due</h4>`;
-wtk.maintenance_now.forEach(m=>{h+=`<div class="maint-row"><div class="maint-info"><div class="maint-svc">${m.service||''}</div><div class="maint-cost">${m.cost||''}</div><div class="maint-why">${m.why||''}</div></div>
-<span class="urg urg-${(m.urgency||'').replace(/\s/g,'_')}">${m.urgency||''}</span></div>`})}
+let h='<button class="back-btn" onclick="goBack()">\u2190 Back to search</button>';
+h+='<div class="score-banner"><div class="vehicle-title">'+(v.year||'')+' '+(v.make||'')+' '+(v.model||'')+' '+(v.trim||'')+'</div>';
+h+='<div class="vehicle-meta">'+(v.price?'$'+v.price.toLocaleString():'')+'  \u00B7 '+(v.mileage?v.mileage.toLocaleString()+' mi':'')+'  \u00B7 '+(v.color||'')+'</div>';
+h+='<div class="score-big">'+(bs.score||'?')+'/10</div>';
+h+='<div class="score-label">'+(bs.label||'')+'</div><div class="score-liner">'+(bs.one_liner||'')+'</div></div>';
+var riskS=nd.risk_score!=null?nd.risk_score:0,dealS=md.deal_score||'\u2014';
+h+='<div class="score-trio">';
+h+='<div class="trio-item"><div class="trio-val" style="color:'+rc(riskS)+'">'+riskS+'/10</div><div class="trio-name">Risk</div><div class="trio-sub">'+(nd.risk_label||'')+'</div></div>';
+h+='<div class="trio-item"><div class="trio-val" style="color:'+sc(bs.score||5)+'">'+(bs.score||'?')+'/10</div><div class="trio-name">Buy Score</div><div class="trio-sub">'+(bs.label||'')+'</div></div>';
+h+='<div class="trio-item"><div class="trio-val" style="color:'+dc(dealS)+'">'+dealS+'/10</div><div class="trio-name">Deal</div><div class="trio-sub">'+(da.deal_label||'')+'</div></div>';
+h+='</div>';
+if(ag.best_thing||ag.know_before_you_go){h+='<div class="card"><div class="card-title"><span class="icon">\u26A1</span>At a Glance</div><div class="glance-grid">';
+h+='<div class="glance-item"><div class="glance-label">Best Thing</div><div class="glance-value">'+(ag.best_thing||'')+'</div></div>';
+h+='<div class="glance-item"><div class="glance-label">Know Before You Go</div><div class="glance-value">'+(ag.know_before_you_go||'')+'</div></div></div></div>'}
+if(ra.score_context){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDEE1\uFE0F</span>Risk Assessment</div>';
+h+='<p style="color:var(--text2);font-size:0.92rem;margin-bottom:14px">'+(ra.score_context)+'</p>';
+(ra.key_reassurances||[]).forEach(function(r){h+='<div class="flag-good">\u2713 '+r+'</div>'});
+(ra.items_to_verify||[]).forEach(function(r){h+='<div class="flag-verify">\u25C9 '+r+'</div>'});h+='</div>'}
+if(da.price_vs_market){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCCA</span>Deal Analysis</div>';
+if(md&&md.price_buckets&&md.price_buckets.length){h+='<div class="chart-container">';
+var mx=Math.max.apply(null,md.price_buckets.map(function(b){return b.count}));
+md.price_buckets.forEach(function(b){var pct=(b.count/mx)*100;var act=v.price>=b.min&&v.price<b.max;
+h+='<div class="chart-bar'+(act?' active':'')+'" style="height:'+Math.max(4,pct)+'%" title="$'+b.min.toLocaleString()+'-$'+b.max.toLocaleString()+': '+b.count+' cars"></div>'});
+h+='</div><div class="chart-labels"><span>$'+(md.min_price?md.min_price.toLocaleString():'?')+'</span><span>$'+(md.max_price?md.max_price.toLocaleString():'?')+'</span></div>'}
+h+='<p style="margin-top:14px;font-size:0.92rem">'+(da.price_vs_market)+'</p>';
+h+='<p style="color:var(--text2);font-size:0.88rem;margin-top:8px">'+(da.why_this_price||'')+'</p>';
+h+='<p style="margin-top:8px;font-weight:600;font-size:0.92rem">'+(da.value_verdict||'')+'</p></div>'}
+if(wtk.generation_overview){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDD0D</span>What to Know</div>';
+h+='<p style="color:var(--text2);font-size:0.92rem;margin-bottom:14px">'+(wtk.generation_overview)+'</p>';
+if(wtk.what_owners_love&&wtk.what_owners_love.length){h+='<h4 class="section-head">What Owners Love</h4><div style="margin-bottom:14px">';
+wtk.what_owners_love.forEach(function(l){h+='<span class="love-tag">'+l+'</span>'});h+='</div>'}
+if(wtk.known_quirks&&wtk.known_quirks.length){h+='<h4 class="section-head">Known Quirks</h4>';
+wtk.known_quirks.forEach(function(q){h+='<div class="quirk"><div class="quirk-head"><span class="quirk-name">'+(q.item||'')+'</span><span class="sev sev-'+(q.severity||'').replace(/\s/g,'_')+'">'+(q.severity||'')+'</span></div>';
+h+='<div class="quirk-detail">'+(q.reality_check||'')+'</div><div class="quirk-action">\u2192 '+(q.what_to_do||'')+'</div></div>'})}
+if(wtk.big_ticket_watch){h+='<h4 class="section-head">Big Ticket Watch</h4><div class="big-ticket">'+(wtk.big_ticket_watch)+'</div>'}
+if(wtk.maintenance_now&&wtk.maintenance_now.length){h+='<h4 class="section-head">Maintenance Due</h4>';
+wtk.maintenance_now.forEach(function(m){h+='<div class="maint-row"><div class="maint-info"><div class="maint-svc">'+(m.service||'')+'</div><div class="maint-cost">'+(m.cost||'')+'</div><div class="maint-why">'+(m.why||'')+'</div></div>';
+h+='<span class="urg urg-'+(m.urgency||'').replace(/\s/g,'_')+'">'+(m.urgency||'')+'</span></div>'})}
 h+='</div>'}
-if(gp.smart_questions?.length||gp.before_you_go?.length){h+=`<div class="card"><div class="card-title"><span class="icon">💬</span>Your Game Plan</div>`;
-if(gp.before_you_go?.length){h+=`<h4 class="section-head">Before You Go</h4><ul class="check-list">`;
-gp.before_you_go.forEach(b=>{h+=`<li>${b}</li>`});h+=`</ul>`}
-if(gp.smart_questions?.length){h+=`<h4 class="section-head">Questions to Ask</h4>`;
-gp.smart_questions.forEach((q,i)=>{h+=`<div class="step"><div class="step-n">${i+1}</div><div><div class="step-q">"${q.ask||''}"</div>
-<div class="step-why">${q.why_this_matters||''}</div>
-<div class="step-sig"><span class="good">✓ ${q.good_answer||''}</span></div>
-<div class="step-sig"><span class="warn">⚠ ${q.dig_deeper_if||''}</span></div></div></div>`})}
-if(gp.test_drive_checklist?.length){h+=`<h4 class="section-head">Test Drive Checklist</h4><ul class="check-list">`;
-gp.test_drive_checklist.forEach(t=>{h+=`<li>${t}</li>`});h+=`</ul>`}
-const desk=gp.at_the_desk;
-if(desk){h+=`<h4 class="section-head">At the Desk</h4>`;
-if(desk.expected_otd_range){h+=`<div class="otd-box"><div class="otd-price">${desk.expected_otd_range}</div><div class="otd-lbl">Expected Out-the-Door</div></div>`}
-if(desk.standard_fees?.length){h+=`<ul class="fee-list">`;desk.standard_fees.forEach(f=>{h+=`<li>✓ ${f}</li>`});h+=`</ul>`}
-if(desk.fees_worth_asking_about?.length){h+=`<ul class="fee-list">`;desk.fees_worth_asking_about.forEach(f=>{h+=`<li class="q">? ${f}</li>`});h+=`</ul>`}
-if(desk.financing_intel){h+=`<p style="color:var(--text2);font-size:0.88rem;margin-top:8px">${desk.financing_intel}</p>`}}
+if(gp.smart_questions&&gp.smart_questions.length||gp.before_you_go&&gp.before_you_go.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCAC</span>Your Game Plan</div>';
+if(gp.before_you_go&&gp.before_you_go.length){h+='<h4 class="section-head">Before You Go</h4><ul class="check-list">';
+gp.before_you_go.forEach(function(b){h+='<li>'+b+'</li>'});h+='</ul>'}
+if(gp.smart_questions&&gp.smart_questions.length){h+='<h4 class="section-head">Questions to Ask</h4>';
+gp.smart_questions.forEach(function(q,i){h+='<div class="step"><div class="step-n">'+(i+1)+'</div><div><div class="step-q">"'+(q.ask||'')+'"</div>';
+h+='<div class="step-why">'+(q.why_this_matters||'')+'</div>';
+h+='<div class="step-sig"><span class="good">\u2713 '+(q.good_answer||'')+'</span></div>';
+h+='<div class="step-sig"><span class="warn">\u26A0 '+(q.dig_deeper_if||'')+'</span></div></div></div>'})}
+if(gp.test_drive_checklist&&gp.test_drive_checklist.length){h+='<h4 class="section-head">Test Drive Checklist</h4><ul class="check-list">';
+gp.test_drive_checklist.forEach(function(t){h+='<li>'+t+'</li>'});h+='</ul>'}
+var desk=gp.at_the_desk;
+if(desk){h+='<h4 class="section-head">At the Desk</h4>';
+if(desk.expected_otd_range){h+='<div class="otd-box"><div class="otd-price">'+(desk.expected_otd_range)+'</div><div class="otd-lbl">Expected Out-the-Door</div></div>'}
+if(desk.standard_fees&&desk.standard_fees.length){h+='<ul class="fee-list">';desk.standard_fees.forEach(function(f){h+='<li>\u2713 '+f+'</li>'});h+='</ul>'}
+if(desk.fees_worth_asking_about&&desk.fees_worth_asking_about.length){h+='<ul class="fee-list">';desk.fees_worth_asking_about.forEach(function(f){h+='<li class="q">? '+f+'</li>'});h+='</ul>'}
+if(desk.financing_intel){h+='<p style="color:var(--text2);font-size:0.88rem;margin-top:8px">'+(desk.financing_intel)+'</p>'}}
 h+='</div>'}
-if(co&&(co.monthly_fuel||co.total_monthly_cost)){h+=`<div class="card"><div class="card-title"><span class="icon">💰</span>Cost to Own</div>
-<div class="cost-grid">`;
-if(co.monthly_fuel){h+=`<div class="cost-item"><div class="cost-val">${co.monthly_fuel}</div><div class="cost-lbl">Monthly Fuel</div></div>`}
-if(co.annual_insurance_estimate){h+=`<div class="cost-item"><div class="cost-val">${co.annual_insurance_estimate}</div><div class="cost-lbl">Annual Insurance</div></div>`}
-if(co.annual_maintenance){h+=`<div class="cost-item"><div class="cost-val">${co.annual_maintenance}</div><div class="cost-lbl">Annual Maint.</div></div>`}
-</div>`;
-if(co.total_monthly_cost){h+=`<div class="otd-box" style="margin-top:14px"><div class="otd-price">${co.total_monthly_cost}</div><div class="otd-lbl">Estimated Total Monthly Cost</div></div>`}
-if(co.first_year_budget){h+=`<p style="color:var(--text2);font-size:0.88rem;margin-top:10px">${co.first_year_budget}</p>`}
-if(co.depreciation_outlook){h+=`<p style="color:var(--text2);font-size:0.88rem;margin-top:6px">${co.depreciation_outlook}</p>`}
-if(co.verdict){h+=`<p style="font-weight:600;margin-top:10px;font-size:0.92rem">${co.verdict}</p>`}
+if(co&&(co.monthly_fuel||co.total_monthly_cost)){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCB0</span>Cost to Own</div>';
+h+='<div class="cost-grid">';
+if(co.monthly_fuel){h+='<div class="cost-item"><div class="cost-val">'+(co.monthly_fuel)+'</div><div class="cost-lbl">Monthly Fuel</div></div>'}
+if(co.annual_insurance_estimate){h+='<div class="cost-item"><div class="cost-val">'+(co.annual_insurance_estimate)+'</div><div class="cost-lbl">Annual Insurance</div></div>'}
+if(co.annual_maintenance){h+='<div class="cost-item"><div class="cost-val">'+(co.annual_maintenance)+'</div><div class="cost-lbl">Annual Maint.</div></div>'}
+h+='</div>';
+if(co.total_monthly_cost){h+='<div class="otd-box" style="margin-top:14px"><div class="otd-price">'+(co.total_monthly_cost)+'</div><div class="otd-lbl">Estimated Total Monthly Cost</div></div>'}
+if(co.first_year_budget){h+='<p style="color:var(--text2);font-size:0.88rem;margin-top:10px">'+(co.first_year_budget)+'</p>'}
+if(co.depreciation_outlook){h+='<p style="color:var(--text2);font-size:0.88rem;margin-top:6px">'+(co.depreciation_outlook)+'</p>'}
+if(co.verdict){h+='<p style="font-weight:600;margin-top:10px;font-size:0.92rem">'+(co.verdict)+'</p>'}
 h+='</div>'}
-if(tips?.length){h+=`<div class="card"><div class="card-title"><span class="icon">💡</span>Pro Tips</div>`;
-tips.forEach(t=>{h+=`<div class="tip">${t}</div>`});h+=`</div>`}
+if(tips&&tips.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCA1</span>Pro Tips</div>';
+tips.forEach(function(t){h+='<div class="tip">'+t+'</div>'});h+='</div>'}
 return h;
 }
 </script>
