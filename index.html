@@ -5,664 +5,453 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AskCarBuddy — AI Car Buying Intelligence</title>
 <meta name="description" content="Paste any car listing. Get pro-level buying intelligence in seconds. Risk scores, deal analysis, and smart questions — powered by AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#050507;--card:#0d0d10;--card2:#141418;--card3:#1a1a1f;--border:#1f1f26;--border2:#2a2a33;--text:#f0f0f3;--text2:#9898a6;--text3:#6b6b7b;--accent:#00e86c;--accent2:#00c95d;--accent-glow:rgba(0,232,108,.15);--accent-glow2:rgba(0,232,108,.08);--blue:#4d8fff;--purple:#9b6dff;--orange:#ff8b3e;--pink:#ff5eaa;--red:#ff4d5e;--yellow:#ffc53d;--glass:rgba(13,13,16,.7);--glass2:rgba(20,20,24,.8)}
+:root{--bg:#050507;--bg2:#0a0a0f;--card:#0f1015;--card2:#15151d;--card3:#1a1a24;--border:#1e1e2e;--border2:#2a2a3a;--text:#f0f0f5;--text2:#8888a0;--text3:#55556a;--green:#00ff88;--green2:#00cc6a;--green-glow:rgba(0,255,136,0.15);--amber:#ffaa00;--red:#ff4466;--blue:#4488ff;--purple:#8855ff;--cyan:#00ddff;--gradient:linear-gradient(135deg,#00ff88 0%,#00ddff 50%,#8855ff 100%);--gradient2:linear-gradient(135deg,#00ff88 0%,#00ddff 100%)}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;overflow-x:hidden}
-::selection{background:var(--accent);color:#000}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+::selection{background:var(--green);color:#000}
 
-/* === ANIMATED BACKGROUND === */
-.bg-grid{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;
-background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);
-background-size:64px 64px}
-.bg-glow{position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:900px;border-radius:50%;
-background:radial-gradient(circle,rgba(0,232,108,.08) 0%,rgba(0,232,108,.02) 40%,transparent 70%);pointer-events:none;z-index:0}
-.bg-glow2{position:fixed;bottom:-300px;right:-200px;width:600px;height:600px;border-radius:50%;
-background:radial-gradient(circle,rgba(77,143,255,.06) 0%,transparent 60%);pointer-events:none;z-index:0}
+/* ===== NAVBAR ===== */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 32px;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(20px);background:rgba(5,5,7,0.8);border-bottom:1px solid transparent;transition:border .3s}
+.nav.scrolled{border-bottom-color:var(--border)}
+.nav-logo{font-size:1.25rem;font-weight:800;letter-spacing:-0.5px}
+.nav-logo span{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-cta{padding:8px 20px;background:var(--green);color:#000;font-weight:700;font-size:0.85rem;border:none;border-radius:8px;cursor:pointer;transition:all .2s}
+.nav-cta:hover{background:#00ffaa;transform:translateY(-1px);box-shadow:0 4px 20px var(--green-glow)}
 
-/* === NAV === */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 24px;
-background:rgba(5,5,7,.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(31,31,38,.5);transition:all .3s}
-.nav-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
-.nav-logo{font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;text-decoration:none;color:var(--text)}
-.nav-logo span{color:var(--accent)}
-.nav-links{display:flex;gap:32px;align-items:center}
-.nav-links a{color:var(--text2);text-decoration:none;font-size:.88rem;font-weight:500;transition:color .2s}
-.nav-links a:hover{color:var(--text)}
-.nav-cta{background:var(--accent)!important;color:#000!important;padding:8px 20px;border-radius:8px;font-weight:700;font-size:.85rem}
-.nav-cta:hover{background:var(--accent2)!important}
+/* ===== HERO ===== */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 20%,rgba(0,255,136,0.06) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(136,85,255,0.04) 0%,transparent 50%);animation:bgPulse 8s ease-in-out infinite alternate;pointer-events:none}
+@keyframes bgPulse{0%{transform:scale(1) rotate(0deg)}100%{transform:scale(1.1) rotate(3deg)}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--card2);border:1px solid var(--border);border-radius:50px;font-size:0.8rem;color:var(--text2);margin-bottom:32px;animation:fadeUp .6s ease}
+.hero-badge .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero h1{font-size:clamp(2.5rem,7vw,5rem);font-weight:900;letter-spacing:-2px;line-height:1.05;margin-bottom:20px;animation:fadeUp .6s ease .1s both}
+.hero h1 .accent{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero .sub{font-size:clamp(1rem,2.5vw,1.3rem);color:var(--text2);max-width:600px;margin:0 auto 40px;font-weight:400;animation:fadeUp .6s ease .2s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
 
-/* === HERO === */
-.hero{position:relative;z-index:1;text-align:center;padding:140px 24px 80px;max-width:900px;margin:0 auto}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:var(--accent-glow);
-border:1px solid rgba(0,232,108,.2);border-radius:100px;font-size:.82rem;font-weight:600;color:var(--accent);margin-bottom:24px}
-.hero-badge .pulse{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
-.hero h1{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:900;letter-spacing:-2px;line-height:1.08;margin-bottom:18px;
-background:linear-gradient(135deg,#fff 0%,#fff 50%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{font-size:clamp(1rem,2vw,1.2rem);color:var(--text2);max-width:560px;margin:0 auto 36px;line-height:1.7}
-.hero-stats{display:flex;justify-content:center;gap:48px;margin-top:48px}
-.hero-stat{text-align:center}
-.hero-stat-val{font-size:1.6rem;font-weight:800;color:var(--text);letter-spacing:-0.5px}
-.hero-stat-label{font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+/* ===== ANALYZER ===== */
+.analyzer{max-width:680px;width:100%;margin:0 auto;animation:fadeUp .6s ease .3s both}
+.input-wrap{position:relative;display:flex;gap:10px;background:var(--card);border:2px solid var(--border);border-radius:16px;padding:6px;transition:border .3s,box-shadow .3s}
+.input-wrap:focus-within{border-color:var(--green);box-shadow:0 0 30px var(--green-glow)}
+.url-input{flex:1;padding:14px 18px;background:transparent;border:none;color:var(--text);font-size:1rem;font-family:inherit;outline:none}
+.url-input::placeholder{color:var(--text3)}
+.analyze-btn{padding:14px 28px;background:var(--green);color:#000;font-weight:700;font-size:0.95rem;border:none;border-radius:12px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
+.analyze-btn:hover{background:#00ffaa;box-shadow:0 4px 20px var(--green-glow)}
+.analyze-btn:disabled{background:var(--card3);color:var(--text3);cursor:not-allowed;box-shadow:none}
+.input-hint{text-align:center;margin-top:14px;font-size:0.82rem;color:var(--text3)}
+.input-hint b{color:var(--text2)}
 
-/* === INPUT SECTION (HERO) === */
-.hero-input{max-width:620px;margin:0 auto;position:relative}
-.hero-input-wrap{display:flex;gap:8px;padding:6px;background:var(--card2);border:1px solid var(--border);border-radius:14px;transition:all .3s}
-.hero-input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-glow)}
-.hero-input input{flex:1;padding:14px 18px;background:transparent;border:none;color:var(--text);font-size:1rem;font-family:inherit;outline:none}
-.hero-input input::placeholder{color:var(--text3)}
-.hero-input button{padding:14px 28px;background:var(--accent);color:#000;font-weight:700;font-size:.95rem;border:none;border-radius:10px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
-.hero-input button:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 24px rgba(0,232,108,.3)}
-.hero-input button:disabled{background:#27272a;color:#52525b;cursor:not-allowed;transform:none;box-shadow:none}
-.hero-hint{margin-top:12px;font-size:.82rem;color:var(--text3)}
-.hero-hint a{color:var(--accent);text-decoration:none}
-
-/* === FLOATING LOGOS === */
-.float-logos{display:flex;justify-content:center;gap:24px;margin-top:56px;opacity:.35}
-.float-logos span{font-size:.78rem;color:var(--text3);font-weight:500}
-
-/* === SECTION SHARED === */
-section{position:relative;z-index:1}
-.section-label{text-align:center;font-size:.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);font-weight:700;margin-bottom:12px}
-.section-title{text-align:center;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;letter-spacing:-1px;margin-bottom:14px}
-.section-sub{text-align:center;color:var(--text2);max-width:520px;margin:0 auto 48px;font-size:1rem}
-
-/* === SCORE DEMO === */
-.demo-section{padding:80px 24px;max-width:1100px;margin:0 auto}
-.demo-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:48px 40px;overflow:hidden;position:relative}
-.demo-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
-.demo-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:32px}
-.demo-score{text-align:center;padding:32px 20px;background:var(--card2);border:1px solid var(--border);border-radius:18px;transition:all .4s}
-.demo-score:hover{transform:translateY(-4px);border-color:rgba(0,232,108,.3);box-shadow:0 8px 32px var(--accent-glow)}
-.demo-score-ring{width:100px;height:100px;margin:0 auto 16px;position:relative}
-.demo-score-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.demo-score-ring circle{fill:none;stroke-width:5;stroke-linecap:round}
-.demo-score-ring .bg{stroke:var(--border)}
-.demo-score-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.8rem;font-weight:800}
-.demo-score-name{font-size:.82rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);font-weight:600}
-.demo-score-desc{font-size:.88rem;color:var(--text3);margin-top:8px}
-
-/* === FEATURES === */
-.features{padding:80px 24px;max-width:1100px;margin:0 auto}
-.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.feature-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;transition:all .4s;position:relative;overflow:hidden}
-.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,var(--accent-glow2) 0%,transparent 50%);opacity:0;transition:opacity .4s}
-.feature-card:hover{transform:translateY(-2px);border-color:var(--border2)}
-.feature-card:hover::before{opacity:1}
-.feature-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:16px;position:relative;z-index:1}
-.feature-card h3{font-size:1rem;font-weight:700;margin-bottom:8px;position:relative;z-index:1}
-.feature-card p{font-size:.88rem;color:var(--text2);line-height:1.6;position:relative;z-index:1}
-.fi-green{background:rgba(0,232,108,.1);border:1px solid rgba(0,232,108,.15)}
-.fi-blue{background:rgba(77,143,255,.1);border:1px solid rgba(77,143,255,.15)}
-.fi-purple{background:rgba(155,109,255,.1);border:1px solid rgba(155,109,255,.15)}
-.fi-orange{background:rgba(255,139,62,.1);border:1px solid rgba(255,139,62,.15)}
-.fi-pink{background:rgba(255,94,170,.1);border:1px solid rgba(255,94,170,.15)}
-.fi-yellow{background:rgba(255,197,61,.1);border:1px solid rgba(255,197,61,.15)}
-
-/* === HOW IT WORKS === */
-.how{padding:80px 24px;max-width:900px;margin:0 auto}
-.how-steps{display:flex;flex-direction:column;gap:0;position:relative}
-.how-steps::before{content:'';position:absolute;left:27px;top:28px;bottom:28px;width:2px;background:linear-gradient(to bottom,var(--accent),var(--blue),var(--purple));opacity:.3}
-.how-step{display:flex;gap:24px;padding:28px 0;position:relative}
-.how-num{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;flex-shrink:0;position:relative;z-index:1}
-.how-num-1{background:rgba(0,232,108,.1);border:1px solid rgba(0,232,108,.2);color:var(--accent)}
-.how-num-2{background:rgba(77,143,255,.1);border:1px solid rgba(77,143,255,.2);color:var(--blue)}
-.how-num-3{background:rgba(155,109,255,.1);border:1px solid rgba(155,109,255,.2);color:var(--purple)}
-.how-content h3{font-size:1.15rem;font-weight:700;margin-bottom:6px}
-.how-content p{color:var(--text2);font-size:.95rem;line-height:1.6}
-.how-tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:8px}
-.how-tag-fast{background:rgba(0,232,108,.1);color:var(--accent)}
-.how-tag-ai{background:rgba(155,109,255,.1);color:var(--purple)}
-.how-tag-smart{background:rgba(77,143,255,.1);color:var(--blue)}
-
-/* === TESTIMONIALS === */
-.testimonials{padding:80px 24px;max-width:1100px;margin:0 auto}
-.test-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.test-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;position:relative}
-.test-card::before{content:'"';position:absolute;top:16px;right:20px;font-size:3rem;color:var(--border);font-family:Georgia,serif;line-height:1}
-.test-stars{color:var(--yellow);font-size:.85rem;letter-spacing:2px;margin-bottom:12px}
-.test-text{font-size:.92rem;color:var(--text);line-height:1.65;margin-bottom:16px}
-.test-author{display:flex;align-items:center;gap:12px}
-.test-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:#000}
-.test-name{font-weight:600;font-size:.88rem}
-.test-role{font-size:.78rem;color:var(--text3)}
-
-/* === PRICING === */
-.pricing{padding:80px 24px;max-width:800px;margin:0 auto}
-.pricing-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.price-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:36px;position:relative;transition:all .4s}
-.price-card.pop{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 8px 40px var(--accent-glow)}
-.price-card.pop::before{content:'MOST POPULAR';position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-background:var(--accent);color:#000;padding:4px 16px;border-radius:100px;font-size:.68rem;font-weight:800;letter-spacing:1px}
-.price-name{font-size:.82rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);font-weight:700;margin-bottom:8px}
-.price-amount{font-size:2.8rem;font-weight:900;letter-spacing:-2px;margin-bottom:4px}
-.price-amount span{font-size:1rem;font-weight:500;color:var(--text2);letter-spacing:0}
-.price-desc{color:var(--text3);font-size:.88rem;margin-bottom:24px;line-height:1.5}
-.price-features{list-style:none;margin-bottom:28px}
-.price-features li{padding:8px 0;font-size:.9rem;display:flex;align-items:center;gap:10px;color:var(--text2)}
-.price-features li::before{content:'✓';color:var(--accent);font-weight:700;font-size:.82rem}
-.price-features li.no::before{content:'—';color:var(--text3)}
-.price-features li.no{color:var(--text3)}
-.price-btn{width:100%;padding:14px;border:none;border-radius:12px;font-weight:700;font-size:.95rem;cursor:pointer;font-family:inherit;transition:all .2s}
-.price-btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
-.price-btn-outline:hover{border-color:var(--text2);background:var(--card2)}
-.price-btn-fill{background:var(--accent);color:#000}
-.price-btn-fill:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 24px rgba(0,232,108,.3)}
-
-/* === CTA BOTTOM === */
-.cta-section{padding:80px 24px;text-align:center}
-.cta-box{max-width:700px;margin:0 auto;padding:56px 40px;background:var(--card);border:1px solid var(--border);border-radius:24px;position:relative;overflow:hidden}
-.cta-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
-.cta-box::after{content:'';position:absolute;bottom:0;left:0;right:0;height:200px;background:radial-gradient(ellipse at center bottom,var(--accent-glow) 0%,transparent 70%);pointer-events:none}
-.cta-box h2{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;position:relative;z-index:1}
-.cta-box p{color:var(--text2);margin-bottom:28px;font-size:1rem;position:relative;z-index:1}
-
-/* === FOOTER === */
-.footer{padding:40px 24px;text-align:center;border-top:1px solid var(--border)}
-.footer p{color:var(--text3);font-size:.82rem}
-.footer a{color:var(--text2);text-decoration:none}
-.footer a:hover{color:var(--accent)}
-
-/* === LOADING & REPORT (PRESERVED) === */
-.loading{text-align:center;padding:50px 20px;display:none}
-.spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+/* ===== LOADING ===== */
+.loading{display:none;text-align:center;padding:60px 20px;max-width:680px;margin:0 auto}
+.loader{position:relative;width:60px;height:60px;margin:0 auto 24px}
+.loader-ring{position:absolute;inset:0;border:3px solid transparent;border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
+.loader-ring:nth-child(2){inset:8px;border-top-color:var(--cyan);animation-duration:1.5s;animation-direction:reverse}
+.loader-ring:nth-child(3){inset:16px;border-top-color:var(--purple);animation-duration:2s}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{color:var(--text2);font-size:0.95rem}
-.loading-sub{color:var(--text3);font-size:0.82rem;margin-top:6px}
-.error{background:#1c0a0a;border:1px solid #3a1a1a;border-radius:12px;padding:18px;margin:18px auto;color:var(--red);display:none;max-width:840px}
-.report{display:none;animation:fadeIn .4s;max-width:840px;margin:0 auto;padding:0 24px}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.loading-steps{margin-top:16px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.load-step{padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:0.75rem;color:var(--text3);transition:all .3s}
+.load-step.active{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.05)}
+.load-step.done{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.1)}
 
-/* === REPORT CARD STYLES (kept from v3.1) === */
-.score-banner{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;margin-bottom:20px;position:relative;overflow:hidden}
-.score-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
-.vehicle-title{font-size:1.5rem;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
-.vehicle-meta{color:var(--text2);font-size:0.88rem;margin-bottom:18px}
-.score-big{font-size:3.5rem;font-weight:900;line-height:1}
-.score-label{font-size:1.2rem;font-weight:600;margin-top:6px}
-.score-liner{color:var(--text2);margin-top:6px;font-size:0.95rem}
+/* ===== ERROR ===== */
+.error{display:none;max-width:680px;margin:16px auto;background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.2);border-radius:12px;padding:16px 20px;color:var(--red);font-size:0.92rem}
 
-.score-trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px}
-.trio-item{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;transition:all .3s}
-.trio-item:hover{border-color:var(--border2);transform:translateY(-2px)}
-.trio-val{font-size:1.8rem;font-weight:800;line-height:1}
-.trio-name{font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-top:6px}
-.trio-sub{font-size:0.82rem;margin-top:3px;font-weight:500}
+/* ===== FEATURES ===== */
+.features{padding:100px 24px;max-width:1100px;margin:0 auto}
+.section-label{text-align:center;font-size:0.75rem;text-transform:uppercase;letter-spacing:3px;color:var(--green);font-weight:600;margin-bottom:12px}
+.section-title{text-align:center;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-1px;margin-bottom:16px}
+.section-sub{text-align:center;color:var(--text2);max-width:550px;margin:0 auto 60px;font-size:1.05rem}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all .3s}
+.feature-card:hover{border-color:var(--border2);transform:translateY(-2px);background:var(--card2)}
+.feature-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:16px}
+.fi-green{background:rgba(0,255,136,0.1);color:var(--green)}
+.fi-blue{background:rgba(68,136,255,0.1);color:var(--blue)}
+.fi-purple{background:rgba(136,85,255,0.1);color:var(--purple)}
+.fi-amber{background:rgba(255,170,0,0.1);color:var(--amber)}
+.fi-cyan{background:rgba(0,221,255,0.1);color:var(--cyan)}
+.fi-red{background:rgba(255,68,102,0.1);color:var(--red)}
+.feature-card h3{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:0.88rem;color:var(--text2);line-height:1.5}
 
-.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:14px;position:relative;overflow:hidden}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent)}
-.card-title{font-size:1.05rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+/* ===== SCORE SHOWCASE ===== */
+.showcase{padding:80px 24px;max-width:900px;margin:0 auto}
+.score-demo{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:50px}
+.demo-score{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 20px;text-align:center;transition:all .3s}
+.demo-score:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+.demo-val{font-size:3rem;font-weight:900;line-height:1}
+.demo-ring{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative}
+.demo-ring::before{content:'';position:absolute;inset:0;border-radius:50%;border:3px solid var(--border)}
+.demo-ring::after{content:'';position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:var(--green)}
+.demo-name{font-size:0.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-top:12px}
+.demo-sub{font-size:0.85rem;color:var(--text2);margin-top:6px;font-weight:500}
+
+/* ===== HOW IT WORKS ===== */
+.how{padding:80px 24px;max-width:800px;margin:0 auto}
+.steps{display:flex;flex-direction:column;gap:0}
+.step-item{display:flex;gap:24px;padding:28px 0;position:relative}
+.step-item:not(:last-child)::after{content:'';position:absolute;left:23px;top:76px;bottom:0;width:2px;background:var(--border)}
+.step-num{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex-shrink:0;border:2px solid var(--border);color:var(--text2);transition:all .3s}
+.step-item:hover .step-num{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.05)}
+.step-content h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.step-content p{color:var(--text2);font-size:0.92rem}
+
+/* ===== CTA ===== */
+.cta{padding:100px 24px;text-align:center}
+.cta-box{max-width:700px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:60px 40px;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;top:-50%;right:-50%;width:100%;height:100%;background:radial-gradient(circle,rgba(0,255,136,0.06) 0%,transparent 60%);pointer-events:none}
+.cta-box h2{font-size:2rem;font-weight:800;margin-bottom:12px;letter-spacing:-0.5px}
+.cta-box p{color:var(--text2);margin-bottom:32px;font-size:1.05rem}
+.cta-btn{display:inline-flex;align-items:center;gap:8px;padding:16px 36px;background:var(--green);color:#000;font-weight:700;font-size:1.05rem;border:none;border-radius:12px;cursor:pointer;transition:all .2s;font-family:inherit;text-decoration:none}
+.cta-btn:hover{background:#00ffaa;transform:translateY(-2px);box-shadow:0 8px 30px var(--green-glow)}
+
+/* ===== FOOTER ===== */
+.footer{padding:40px 24px;text-align:center;color:var(--text3);font-size:0.82rem;border-top:1px solid var(--border)}
+
+/* ===== REPORT ===== */
+.report{display:none;max-width:840px;margin:0 auto;padding:20px;animation:fadeUp .4s}
+.score-banner{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden}
+.score-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient)}
+.vehicle-title{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px}
+.vehicle-meta{color:var(--text2);font-size:0.88rem;margin-bottom:20px}
+.score-big{font-size:4rem;font-weight:900;line-height:1;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.score-label{font-size:1.1rem;font-weight:600;margin-top:8px}
+.score-liner{color:var(--text2);margin-top:8px;font-size:0.95rem;max-width:500px;margin-left:auto;margin-right:auto}
+.score-trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.trio-item{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;text-align:center}
+.trio-val{font-size:2rem;font-weight:900;line-height:1}
+.trio-name{font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-top:8px}
+.trio-sub{font-size:0.82rem;margin-top:4px;font-weight:500}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:12px}
+.card-title{font-size:1.05rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
 .icon{font-size:1.2rem}
-
 .glance-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.glance-item{background:var(--card2);border-radius:12px;padding:14px}
-.glance-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:5px}
+.glance-item{background:var(--card2);border-radius:12px;padding:16px}
+.glance-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:6px}
 .glance-value{font-size:0.92rem;font-weight:500}
-
-.flag-good{background:#0a1f0a;border:1px solid #163016;border-radius:10px;padding:8px 12px;margin:4px 0;color:#4ade80;font-size:0.88rem}
-.flag-verify{background:#1a1a0f;border:1px solid #2a2a1a;border-radius:10px;padding:8px 12px;margin:4px 0;color:var(--yellow);font-size:0.88rem}
-
-.chart-container{position:relative;height:100px;display:flex;align-items:flex-end;gap:2px;margin:14px 0}
-.chart-bar{background:#1f1f26;border-radius:4px 4px 0 0;flex:1;min-width:16px;transition:all .3s}
-.chart-bar.active{background:var(--accent)}
-.chart-labels{display:flex;justify-content:space-between;color:var(--text2);font-size:0.72rem;margin-top:3px}
-
-.love-tag{display:inline-block;background:#0a1f0a;border:1px solid #163016;color:#4ade80;padding:5px 12px;border-radius:20px;font-size:0.82rem;font-weight:500;margin:3px}
-
-.quirk{background:var(--card2);border-radius:12px;padding:14px;margin-bottom:8px}
-.quirk-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.flag-good{background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:10px;padding:10px 14px;margin:4px 0;color:var(--green);font-size:0.88rem}
+.flag-verify{background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.15);border-radius:10px;padding:10px 14px;margin:4px 0;color:var(--amber);font-size:0.88rem}
+.chart-container{position:relative;height:100px;display:flex;align-items:flex-end;gap:3px;margin:14px 0}
+.chart-bar{background:var(--card3);border-radius:4px 4px 0 0;flex:1;min-width:16px;transition:all .3s}
+.chart-bar.active{background:var(--green)}
+.chart-labels{display:flex;justify-content:space-between;color:var(--text3);font-size:0.72rem;margin-top:4px}
+.love-tag{display:inline-block;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);color:var(--green);padding:5px 14px;border-radius:20px;font-size:0.82rem;font-weight:500;margin:3px}
+.quirk{background:var(--card2);border-radius:12px;padding:16px;margin-bottom:8px}
+.quirk-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .quirk-name{font-weight:600;font-size:0.95rem}
-.sev{padding:2px 8px;border-radius:16px;font-size:0.7rem;font-weight:600;text-transform:uppercase}
-.sev-minor_quirk{background:#0a1f0a;color:#4ade80}.sev-worth_checking{background:#2a2a0f;color:var(--yellow)}.sev-important{background:#2a0f0f;color:#f87171}
+.sev{padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.sev-minor_quirk{background:rgba(0,255,136,0.1);color:var(--green)}.sev-worth_checking{background:rgba(255,170,0,0.1);color:var(--amber)}.sev-important{background:rgba(255,68,102,0.1);color:var(--red)}
 .quirk-detail{color:var(--text2);font-size:0.88rem;margin-bottom:4px}
-.quirk-action{color:var(--accent);font-size:0.88rem;font-weight:500}
-
-.big-ticket{background:var(--card2);border-left:3px solid var(--blue);border-radius:0 12px 12px 0;padding:14px 16px;margin:12px 0;font-size:0.92rem}
-.maint-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card2);border-radius:10px;margin-bottom:6px}
+.quirk-action{color:var(--green);font-size:0.88rem;font-weight:500}
+.big-ticket{background:var(--card2);border-left:3px solid var(--blue);border-radius:0 12px 12px 0;padding:16px 18px;margin:12px 0;font-size:0.92rem}
+.maint-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--card2);border-radius:10px;margin-bottom:6px}
 .maint-info{flex:1}.maint-svc{font-weight:500;font-size:0.92rem}.maint-cost{color:var(--text2);font-size:0.82rem}.maint-why{color:var(--text2);font-size:0.8rem;margin-top:2px}
-.urg{padding:2px 8px;border-radius:6px;font-size:0.68rem;font-weight:600;text-transform:uppercase;white-space:nowrap}
-.urg-due_now{background:#2a0f0f;color:#ef4444}.urg-next_3_months,.urg-soon{background:#2a2a0f;color:var(--yellow)}.urg-next_6_months,.urg-within_6_months{background:#0a1f0a;color:#4ade80}.urg-next_year,.urg-within_a_year{background:#0f1a2a;color:#60a5fa}
-
-.step{display:flex;gap:10px;margin-bottom:14px}
-.step-n{width:26px;height:26px;background:var(--accent);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;flex-shrink:0;margin-top:2px}
-.step-q{font-weight:600;font-size:0.95rem;margin-bottom:3px}
-.step-why{color:var(--text2);font-size:0.84rem;margin-bottom:3px}
-.step-sig{font-size:0.84rem}
-.good{color:var(--accent)}.warn{color:var(--yellow)}
-
-.otd-box{background:var(--card2);border-radius:14px;padding:18px;text-align:center;margin:14px 0}
-.otd-price{font-size:1.8rem;font-weight:800;color:var(--accent)}
+.urg{padding:3px 10px;border-radius:8px;font-size:0.66rem;font-weight:700;text-transform:uppercase;white-space:nowrap;letter-spacing:0.5px}
+.urg-due_now{background:rgba(255,68,102,0.1);color:var(--red)}.urg-next_3_months,.urg-soon{background:rgba(255,170,0,0.1);color:var(--amber)}.urg-next_6_months,.urg-within_6_months{background:rgba(0,255,136,0.08);color:var(--green)}.urg-next_year,.urg-within_a_year{background:rgba(68,136,255,0.1);color:var(--blue)}
+.step{display:flex;gap:12px;margin-bottom:16px}.step-n{width:28px;height:28px;background:var(--green);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;flex-shrink:0;margin-top:2px}
+.step-q{font-weight:600;font-size:0.95rem;margin-bottom:3px}.step-why{color:var(--text2);font-size:0.84rem;margin-bottom:3px}.step-sig{font-size:0.84rem}
+.good{color:var(--green)}.warn{color:var(--amber)}
+.otd-box{background:var(--card2);border-radius:14px;padding:20px;text-align:center;margin:14px 0}
+.otd-price{font-size:2rem;font-weight:900;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .otd-lbl{color:var(--text2);font-size:0.82rem;margin-top:3px}
-
 .cost-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.cost-item{background:var(--card2);border-radius:10px;padding:12px;text-align:center}
-.cost-val{font-size:0.95rem;font-weight:700}
-.cost-lbl{font-size:0.68rem;color:var(--text2);margin-top:3px}
+.cost-item{background:var(--card2);border-radius:10px;padding:14px;text-align:center}
+.cost-val{font-size:0.95rem;font-weight:700}.cost-lbl{font-size:0.68rem;color:var(--text2);margin-top:4px}
+.tip{background:var(--card2);border-left:3px solid var(--green);border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:8px;font-size:0.92rem}
+.fee-list{list-style:none}.fee-list li{padding:4px 0;color:var(--text2);font-size:0.88rem}.fee-list li.q{color:var(--amber)}
+.check-list{list-style:none}.check-list li{padding:6px 0 6px 24px;position:relative;font-size:0.92rem}.check-list li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}
+h4.section-head{color:var(--green);font-size:0.85rem;margin:18px 0 8px;text-transform:uppercase;letter-spacing:1px}
+.back-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:0.88rem;border-radius:10px;cursor:pointer;margin-bottom:20px;font-family:inherit;transition:all .2s}
+.back-btn:hover{border-color:var(--green);color:var(--green)}
 
-.tip{background:var(--card2);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:6px;font-size:0.92rem}
-.fee-list{list-style:none}.fee-list li{padding:4px 0;color:var(--text2);font-size:0.88rem}.fee-list li.q{color:var(--yellow)}
-.check-list{list-style:none}.check-list li{padding:6px 0 6px 22px;position:relative;font-size:0.92rem}.check-list li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
-h4.section-head{color:var(--accent);font-size:0.9rem;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px}
-
-/* === SCROLL ANIMATIONS === */
-.reveal{opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.16,1,.3,1)}
-.reveal.visible{opacity:1;transform:none}
-.reveal-delay-1{transition-delay:.1s}
-.reveal-delay-2{transition-delay:.2s}
-.reveal-delay-3{transition-delay:.3s}
-.reveal-delay-4{transition-delay:.4s}
-.reveal-delay-5{transition-delay:.5s}
-
-/* === RESPONSIVE === */
 @media(max-width:768px){
-.features-grid,.test-grid{grid-template-columns:1fr}
-.pricing-cards{grid-template-columns:1fr}
-.demo-scores{grid-template-columns:1fr}
-.score-trio{grid-template-columns:1fr}
-.glance-grid{grid-template-columns:1fr}
+.feature-grid{grid-template-columns:1fr}
+.score-demo{grid-template-columns:1fr}
+.nav{padding:12px 16px}
+}
+@media(max-width:600px){
+.glance-grid,.score-trio{grid-template-columns:1fr}
 .cost-grid{grid-template-columns:1fr 1fr}
-.hero-stats{gap:24px}
-.hero-stat-val{font-size:1.2rem}
-.nav-links a:not(.nav-cta){display:none}
-.hero h1{font-size:2rem}
-.score-big{font-size:2.8rem}
-.trio-val{font-size:1.4rem}
-.how-step{gap:16px}
+.score-big{font-size:3rem}
+.trio-val{font-size:1.5rem}
+.input-wrap{flex-direction:column}
+.analyze-btn{width:100%}
+.hero h1{letter-spacing:-1px}
 }
 </style>
 </head>
 <body>
-<!-- Background effects -->
-<div class="bg-grid"></div>
-<div class="bg-glow"></div>
-<div class="bg-glow2"></div>
 
-<!-- Nav -->
-<nav class="nav">
-<div class="nav-inner">
-<a href="#" class="nav-logo">Ask<span>Car</span>Buddy</a>
-<div class="nav-links">
-<a href="#features">Features</a>
-<a href="#how">How It Works</a>
-<a href="#pricing">Pricing</a>
-<a href="#top" class="nav-cta">Try Free →</a>
-</div>
-</div>
+<!-- NAVBAR -->
+<nav class="nav" id="nav">
+  <div class="nav-logo">Ask<span>CarBuddy</span></div>
+  <button class="nav-cta" onclick="document.getElementById('analyzer').scrollIntoView({behavior:'smooth'})">Try It Free</button>
 </nav>
 
-<!-- Hero -->
-<section class="hero" id="top">
-<div class="hero-badge"><span class="pulse"></span> AI-Powered Car Intelligence</div>
-<h1>Stop guessing.<br>Start buying smart.</h1>
-<p>Paste any car listing URL and get an instant pro-level buyer intelligence report — risk scores, deal analysis, maintenance forecasts, and the exact questions to ask.</p>
-<div class="hero-input">
-<div class="hero-input-wrap">
-<input type="url" id="urlInput" placeholder="Paste any car listing URL..." autocomplete="off">
-<button id="analyzeBtn" onclick="go()">Analyze Free</button>
-</div>
-<div class="hero-hint">Works with dealers, Autotrader, Cars.com, CarGurus & more · <a href="#pricing">See pricing</a></div>
-</div>
-<div class="hero-stats">
-<div class="hero-stat"><div class="hero-stat-val">30 sec</div><div class="hero-stat-label">Analysis Time</div></div>
-<div class="hero-stat"><div class="hero-stat-val">50+</div><div class="hero-stat-label">Data Points</div></div>
-<div class="hero-stat"><div class="hero-stat-val">$2,400</div><div class="hero-stat-label">Avg. Saved</div></div>
-</div>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span> AI-Powered Car Intelligence</div>
+  <h1>Stop guessing.<br>Start <span class="accent">knowing.</span></h1>
+  <p class="sub">Paste any car listing URL and get a pro-level buyer intelligence brief in seconds. Market analysis, risk scores, smart questions — everything you need to buy smart.</p>
+
+  <div class="analyzer" id="analyzer">
+    <div class="input-wrap">
+      <input type="url" class="url-input" id="urlInput" placeholder="Paste any car listing URL..." autocomplete="off">
+      <button class="analyze-btn" id="analyzeBtn" onclick="go()">Analyze</button>
+    </div>
+    <div class="input-hint">Works with <b>any dealer site</b>, Cars.com, AutoTrader, CarGurus, Facebook & more</div>
+  </div>
 </section>
 
-<!-- Score Demo -->
-<section class="demo-section" id="demo">
-<div class="demo-card reveal">
-<div class="section-label">See What You Get</div>
-<div class="section-title" style="text-align:left">Three scores. One smart decision.</div>
-<p style="color:var(--text2);font-size:.95rem">Every report delivers three AI-powered scores so you know exactly where you stand — in seconds.</p>
-<div class="demo-scores">
-<div class="demo-score reveal reveal-delay-1">
-<div class="demo-score-ring">
-<svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42" stroke-dasharray="264" /><circle cx="50" cy="50" r="42" stroke="#22c55e" stroke-dasharray="264" stroke-dashoffset="79" /></svg>
-<div class="demo-score-val" style="color:#22c55e">2.1</div>
+<!-- LOADING -->
+<div class="loading" id="loading">
+  <div class="loader"><div class="loader-ring"></div><div class="loader-ring"></div><div class="loader-ring"></div></div>
+  <div class="loading-text">Analyzing your listing...</div>
+  <div class="loading-steps">
+    <span class="load-step" id="ls1">Scraping listing</span>
+    <span class="load-step" id="ls2">VIN decode</span>
+    <span class="load-step" id="ls3">Market comps</span>
+    <span class="load-step" id="ls4">Safety data</span>
+    <span class="load-step" id="ls5">Web research</span>
+    <span class="load-step" id="ls6">AI analysis</span>
+  </div>
 </div>
-<div class="demo-score-name">Risk Score</div>
-<div class="demo-score-desc">How likely is this car to become a headache?</div>
-</div>
-<div class="demo-score reveal reveal-delay-2">
-<div class="demo-score-ring">
-<svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42" stroke-dasharray="264" /><circle cx="50" cy="50" r="42" stroke="#4d8fff" stroke-dasharray="264" stroke-dashoffset="53" /></svg>
-<div class="demo-score-val" style="color:#4d8fff">8/10</div>
-</div>
-<div class="demo-score-name">Buy Score</div>
-<div class="demo-score-desc">Should you pull the trigger? AI says how confident.</div>
-</div>
-<div class="demo-score reveal reveal-delay-3">
-<div class="demo-score-ring">
-<svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42" stroke-dasharray="264" /><circle cx="50" cy="50" r="42" stroke="#9b6dff" stroke-dasharray="264" stroke-dashoffset="40" /></svg>
-<div class="demo-score-val" style="color:#9b6dff">8.5</div>
-</div>
-<div class="demo-score-name">Deal Score</div>
-<div class="demo-score-desc">Is this priced right compared to the market?</div>
-</div>
-</div>
-</div>
-</section>
 
-<!-- Features -->
-<section class="features" id="features">
-<div class="section-label">Features</div>
-<div class="section-title">Everything a pro buyer knows.<br>Now in your pocket.</div>
-<div class="section-sub">We pull from NHTSA safety databases, real market listings, owner communities, and AI analysis to build a complete picture.</div>
-<div class="features-grid">
-<div class="feature-card reveal reveal-delay-1">
-<div class="feature-icon fi-green">🛡️</div>
-<h3>Risk Score</h3>
-<p>NHTSA complaints, recall history, and known reliability issues scored for your exact year/make/model.</p>
-</div>
-<div class="feature-card reveal reveal-delay-2">
-<div class="feature-icon fi-blue">💰</div>
-<h3>Deal Analysis</h3>
-<p>Real market comps from thousands of listings. Know if you're overpaying — or snagging a steal.</p>
-</div>
-<div class="feature-card reveal reveal-delay-3">
-<div class="feature-icon fi-purple">🧠</div>
-<h3>Smart Questions</h3>
-<p>AI generates laser-specific questions for YOUR exact car. Not generic — these are questions a car expert would ask.</p>
-</div>
-<div class="feature-card reveal reveal-delay-1">
-<div class="feature-icon fi-orange">🔧</div>
-<h3>Maintenance Forecast</h3>
-<p>Know what's coming. We map out the next 12 months of likely service needs with estimated costs.</p>
-</div>
-<div class="feature-card reveal reveal-delay-2">
-<div class="feature-icon fi-pink">❤️</div>
-<h3>What Owners Love</h3>
-<p>Real owner sentiment — what people actually love (and hate) about this specific model and trim.</p>
-</div>
-<div class="feature-card reveal reveal-delay-3">
-<div class="feature-icon fi-yellow">📊</div>
-<h3>Cost to Own</h3>
-<p>Full ownership breakdown — insurance estimates, fuel costs, depreciation outlook, and total 3-year cost.</p>
-</div>
-</div>
-</section>
-
-<!-- How It Works -->
-<section class="how" id="how">
-<div class="section-label">How It Works</div>
-<div class="section-title">Three steps. Thirty seconds.</div>
-<div class="section-sub">No downloads. No signups. Just paste and go.</div>
-<div class="how-steps">
-<div class="how-step reveal">
-<div class="how-num how-num-1">1</div>
-<div class="how-content">
-<h3>Paste any car listing URL</h3>
-<p>From any dealer website, Autotrader, Cars.com, CarGurus, Facebook Marketplace — we handle it all. Just copy the URL and paste it above.</p>
-<span class="how-tag how-tag-fast">⚡ Instant</span>
-</div>
-</div>
-<div class="how-step reveal reveal-delay-1">
-<div class="how-num how-num-2">2</div>
-<div class="how-content">
-<h3>Our AI deep-dives the listing</h3>
-<p>We scrape the listing, decode the VIN, pull NHTSA safety data, cross-reference market prices across thousands of listings, and research owner reviews — all in under 30 seconds.</p>
-<span class="how-tag how-tag-ai">🧠 AI-Powered</span>
-</div>
-</div>
-<div class="how-step reveal reveal-delay-2">
-<div class="how-num how-num-3">3</div>
-<div class="how-content">
-<h3>Get your buyer intelligence brief</h3>
-<p>A comprehensive report with risk scores, deal analysis, maintenance forecasts, smart questions to ask, and everything you need to buy with confidence. Like having a car expert in your pocket.</p>
-<span class="how-tag how-tag-smart">📋 Actionable Intel</span>
-</div>
-</div>
-</div>
-</section>
-
-<!-- Testimonials -->
-<section class="testimonials" id="testimonials">
-<div class="section-label">What Buyers Say</div>
-<div class="section-title">Saved thousands. Bought smarter.</div>
-<div class="section-sub">Real stories from real car buyers who used AskCarBuddy before signing.</div>
-<div class="test-grid">
-<div class="test-card reveal reveal-delay-1">
-<div class="test-stars">★★★★★</div>
-<div class="test-text">Pasted a listing for a 2019 Civic and it flagged an AC compressor issue specific to that year. Dealer admitted it needed work. Saved me $1,200.</div>
-<div class="test-author">
-<div class="test-avatar" style="background:var(--accent)">M</div>
-<div><div class="test-name">Marcus T.</div><div class="test-role">First-time buyer, Atlanta</div></div>
-</div>
-</div>
-<div class="test-card reveal reveal-delay-2">
-<div class="test-stars">★★★★★</div>
-<div class="test-text">The smart questions alone are worth it. I walked into the dealer sounding like I knew everything about that specific RAV4. They took me way more seriously.</div>
-<div class="test-author">
-<div class="test-avatar" style="background:var(--blue)">S</div>
-<div><div class="test-name">Sarah K.</div><div class="test-role">Bought a 2021 RAV4, Denver</div></div>
-</div>
-</div>
-<div class="test-card reveal reveal-delay-3">
-<div class="test-stars">★★★★★</div>
-<div class="test-text">I was about to buy a truck that looked great. AskCarBuddy showed me the deal score was 3/10 — way overpriced vs market. Found a better one the same day.</div>
-<div class="test-author">
-<div class="test-avatar" style="background:var(--purple)">J</div>
-<div><div class="test-name">James R.</div><div class="test-role">Bought a 2022 F-150, Detroit</div></div>
-</div>
-</div>
-</div>
-</section>
-
-<!-- Pricing -->
-<section class="pricing" id="pricing">
-<div class="section-label">Pricing</div>
-<div class="section-title">One report could save you thousands.</div>
-<div class="section-sub">Try your first report free. No credit card needed.</div>
-<div class="pricing-cards">
-<div class="price-card reveal">
-<div class="price-name">Free Preview</div>
-<div class="price-amount">$0</div>
-<div class="price-desc">See what AskCarBuddy can do. Get a taste of the intelligence.</div>
-<ul class="price-features">
-<li>Buy Score overview</li>
-<li>Basic risk flags</li>
-<li>Top 3 smart questions</li>
-<li class="no">Full deal analysis</li>
-<li class="no">Maintenance forecast</li>
-<li class="no">Cost to own breakdown</li>
-</ul>
-<button class="price-btn price-btn-outline" onclick="document.getElementById('urlInput').focus();window.scrollTo({top:0,behavior:'smooth'})">Try Free</button>
-</div>
-<div class="price-card pop reveal reveal-delay-1">
-<div class="price-name">Full Report</div>
-<div class="price-amount">$19 <span>/ report</span></div>
-<div class="price-desc">The complete buyer intelligence brief. Everything you need to buy smart.</div>
-<ul class="price-features">
-<li>Risk Score + full analysis</li>
-<li>Deal Score + market comps</li>
-<li>Buy Score with confidence level</li>
-<li>All smart questions + signals</li>
-<li>12-month maintenance forecast</li>
-<li>Cost to own breakdown</li>
-<li>Dealer reputation snapshot</li>
-<li>What owners love & hate</li>
-</ul>
-<button class="price-btn price-btn-fill" onclick="document.getElementById('urlInput').focus();window.scrollTo({top:0,behavior:'smooth'})">Get Full Report →</button>
-</div>
-</div>
-</section>
-
-<!-- Bottom CTA -->
-<section class="cta-section">
-<div class="cta-box reveal">
-<h2>Your next car purchase,<br>handled like a pro.</h2>
-<p>Stop Googling "is this a good deal" and start knowing. Paste your listing and see the difference in 30 seconds.</p>
-<button class="price-btn price-btn-fill" style="max-width:300px;margin:0 auto;display:block;padding:16px 32px;font-size:1.05rem" onclick="document.getElementById('urlInput').focus();window.scrollTo({top:0,behavior:'smooth'})">Analyze a Listing Free →</button>
-</div>
-</section>
-
-<!-- Footer -->
-<footer class="footer">
-<p>© 2026 AskCarBuddy · Built for smart car buyers · <a href="#">Privacy</a> · <a href="#">Terms</a></p>
-</footer>
-
-<!-- Loading & Error (for analyze) -->
-<div class="loading" id="loading"><div class="spinner"></div><div class="loading-text">Analyzing your listing...</div><div class="loading-sub">Scraping listing · VIN decode · Market comps · Safety data · Web research · AI analysis</div></div>
+<!-- ERROR -->
 <div class="error" id="error"></div>
+
+<!-- REPORT -->
 <div class="report" id="report"></div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-label">What you get</div>
+  <h2 class="section-title">Everything a pro buyer would check.<br>In 30 seconds.</h2>
+  <p class="section-sub">We pull data from 5+ sources and run AI analysis that would take a human researcher hours.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon fi-green">📊</div>
+      <h3>Deal Score</h3>
+      <p>Instant market comparison against real listings nearby. Know if you're overpaying before you walk in.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-red">🛡️</div>
+      <h3>Risk Assessment</h3>
+      <p>NHTSA recalls, complaint data, and severity analysis — all contextualized for this exact car.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-blue">🔍</div>
+      <h3>Known Quirks</h3>
+      <p>Real documented issues for this generation & engine. Not generic "check the tires" advice.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-purple">💬</div>
+      <h3>Smart Questions</h3>
+      <p>Insider questions to ask the dealer that reveal what you can't find online. With red/green flag answers.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-amber">🔧</div>
+      <h3>Maintenance Intel</h3>
+      <p>Exactly what's due at this mileage, what it costs for this car, and what to budget for year one.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-cyan">💰</div>
+      <h3>True Cost to Own</h3>
+      <p>Fuel, insurance, maintenance, depreciation — your all-in monthly cost with no surprises.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SCORE SHOWCASE -->
+<section class="showcase">
+  <div class="section-label">The trio</div>
+  <h2 class="section-title">Three scores. Full picture.</h2>
+  <p class="section-sub">One glance tells you everything. Risk, value, and our overall verdict.</p>
+  <div class="score-demo">
+    <div class="demo-score">
+      <div class="demo-val" style="color:var(--green)">2/10</div>
+      <div class="demo-name">Risk Score</div>
+      <div class="demo-sub">Low Risk — Safe buy</div>
+    </div>
+    <div class="demo-score">
+      <div class="demo-val" style="color:var(--green)">8/10</div>
+      <div class="demo-name">Buy Score</div>
+      <div class="demo-sub">Great Find</div>
+    </div>
+    <div class="demo-score">
+      <div class="demo-val" style="color:var(--blue)">7/10</div>
+      <div class="demo-name">Deal Score</div>
+      <div class="demo-sub">Good Value</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="section-label">How it works</div>
+  <h2 class="section-title">Three steps. Zero BS.</h2>
+  <div class="steps">
+    <div class="step-item"><div class="step-num">1</div><div class="step-content"><h3>Paste the URL</h3><p>Found a car you like? Copy the listing URL from any site and paste it in.</p></div></div>
+    <div class="step-item"><div class="step-num">2</div><div class="step-content"><h3>We do the homework</h3><p>Our AI scrapes the listing, decodes the VIN, pulls market data, safety records, owner reviews, and dealer intel.</p></div></div>
+    <div class="step-item"><div class="step-num">3</div><div class="step-content"><h3>Walk in armed</h3><p>Get a comprehensive buyer brief with scores, smart questions, maintenance timeline, and cost projections.</p></div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-box">
+    <h2>Ready to buy smart?</h2>
+    <p>Paste any listing and see what you've been missing.</p>
+    <a class="cta-btn" href="#analyzer">Analyze a Listing →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>AskCarBuddy — AI Car Buying Intelligence · Built with 🧠 by the CarClaw team</p>
+</footer>
 
 <script>
 const API=location.origin;
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>50)});
 
-// === ANALYZE ===
+let loadTimer;
+function animateSteps(){
+  const steps=['ls1','ls2','ls3','ls4','ls5','ls6'];
+  let i=0;
+  loadTimer=setInterval(()=>{
+    if(i>0)document.getElementById(steps[i-1]).classList.replace('active','done');
+    if(i<steps.length){document.getElementById(steps[i]).classList.add('active');i++}
+    else clearInterval(loadTimer);
+  },2500);
+}
+function resetSteps(){
+  clearInterval(loadTimer);
+  ['ls1','ls2','ls3','ls4','ls5','ls6'].forEach(id=>{
+    const el=document.getElementById(id);el.classList.remove('active','done');
+  });
+}
+
 async function go(){
   const url=document.getElementById('urlInput').value.trim();if(!url)return;
   const btn=document.getElementById('analyzeBtn'),ld=document.getElementById('loading'),err=document.getElementById('error'),rpt=document.getElementById('report');
+  // Hide hero content, show loading
+  document.querySelector('.hero').style.display='none';
+  document.querySelector('.features').style.display='none';
+  document.querySelector('.showcase').style.display='none';
+  document.querySelector('.how').style.display='none';
+  document.querySelector('.cta').style.display='none';
   btn.disabled=true;btn.textContent='Analyzing...';ld.style.display='block';err.style.display='none';rpt.style.display='none';
-  // Scroll to loading
-  ld.scrollIntoView({behavior:'smooth',block:'center'});
-  try{const r=await fetch(API+'/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});const d=await r.json();
-  if(d.error){err.textContent=d.error;err.style.display='block'}else{rpt.innerHTML=render(d);rpt.style.display='block';rpt.scrollIntoView({behavior:'smooth',block:'start'})}}
-  catch(e){err.textContent='Connection failed. Please try again.';err.style.display='block'}
-  ld.style.display='none';btn.disabled=false;btn.textContent='Analyze Free';
+  resetSteps();animateSteps();
+  try{
+    const r=await fetch(API+'/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const d=await r.json();
+    if(d.error){err.textContent=d.error;err.style.display='block';showSections()}
+    else{rpt.innerHTML=render(d);rpt.style.display='block'}
+  }catch(e){err.textContent='Connection failed. Please try again.';err.style.display='block';showSections()}
+  ld.style.display='none';resetSteps();btn.disabled=false;btn.textContent='Analyze';
 }
+
+function showSections(){
+  document.querySelector('.hero').style.display='';
+  document.querySelector('.features').style.display='';
+  document.querySelector('.showcase').style.display='';
+  document.querySelector('.how').style.display='';
+  document.querySelector('.cta').style.display='';
+}
+
+function goBack(){
+  document.getElementById('report').style.display='none';
+  showSections();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
 
-// === COLOR FUNCTIONS ===
-function sc(s){return s>=8?'#22c55e':s>=6?'#f59e0b':s>=4?'#f97316':'#ef4444'}
-function rc(s){return s<=2?'#22c55e':s<=3?'#4d8fff':s<=5?'#f59e0b':'#ef4444'}
-function dc(s){return s>=8?'#22c55e':s>=6?'#4d8fff':s>=4?'#f59e0b':'#f97316'}
+function sc(s){return s>=8?'var(--green)':s>=6?'var(--amber)':s>=4?'#f97316':'var(--red)'}
+function rc(s){return s<=2?'var(--green)':s<=3?'var(--blue)':s<=5?'var(--amber)':'var(--red)'}
+function dc(s){return s>=8?'var(--green)':s>=6?'var(--blue)':s>=4?'var(--amber)':'#f97316'}
 
-// === RENDER REPORT ===
 function render(d){
 const v=d.vehicle||{},a=d.analysis||{},bs=a.buy_score||{},ag=a.at_a_glance||{},ra=a.risk_assessment||{},da=a.deal_analysis||{},wtk=a.what_to_know||{},gp=a.your_game_plan||{},co=a.cost_to_own||{},tips=a.pro_tips||[];
 const md=d.market_data||{},nd=d.nhtsa_data||{};
-let h='';
-
-// Banner
+let h='<button class="back-btn" onclick="goBack()">← Back to search</button>';
 h+=`<div class="score-banner"><div class="vehicle-title">${v.year||''} ${v.make||''} ${v.model||''} ${v.trim||''}</div>
-<div class="vehicle-meta">${v.price?'$'+Number(v.price).toLocaleString():''} · ${v.mileage?Number(v.mileage).toLocaleString()+' mi':''} · ${v.color||''}</div>
-<div class="score-big" style="color:${sc(bs.score||5)}">${bs.score||'?'}/10</div>
+<div class="vehicle-meta">${v.price?'$'+v.price.toLocaleString():''} · ${v.mileage?v.mileage.toLocaleString()+' mi':''} · ${v.color||''}</div>
+<div class="score-big">${bs.score||'?'}/10</div>
 <div class="score-label">${bs.label||''}</div><div class="score-liner">${bs.one_liner||''}</div></div>`;
-
-// Trio
 const riskS=nd.risk_score!=null?nd.risk_score:0,dealS=md.deal_score||'—';
 h+=`<div class="score-trio">
 <div class="trio-item"><div class="trio-val" style="color:${rc(riskS)}">${riskS}/10</div><div class="trio-name">Risk</div><div class="trio-sub">${nd.risk_label||''}</div></div>
 <div class="trio-item"><div class="trio-val" style="color:${sc(bs.score||5)}">${bs.score||'?'}/10</div><div class="trio-name">Buy Score</div><div class="trio-sub">${bs.label||''}</div></div>
 <div class="trio-item"><div class="trio-val" style="color:${dc(dealS)}">${dealS}/10</div><div class="trio-name">Deal</div><div class="trio-sub">${da.deal_label||''}</div></div></div>`;
-
-// At a Glance
-if(ag.best_thing||ag.know_before_you_go){
-h+=`<div class="card"><div class="card-title"><span class="icon">⚡</span>At a Glance</div><div class="glance-grid">
-${ag.best_thing?`<div class="glance-item"><div class="glance-label">Best Thing</div><div class="glance-value">${ag.best_thing}</div></div>`:''}
-${ag.biggest_risk?`<div class="glance-item"><div class="glance-label">Watch Out For</div><div class="glance-value">${ag.biggest_risk}</div></div>`:''}
-${ag.market_position?`<div class="glance-item"><div class="glance-label">Market Position</div><div class="glance-value">${ag.market_position}</div></div>`:''}
-${ag.know_before_you_go?`<div class="glance-item"><div class="glance-label">Know Before You Go</div><div class="glance-value">${ag.know_before_you_go}</div></div>`:''}
-</div></div>`}
-
-// Flags
-const fl=a.green_flags||[];if(fl.length){h+=`<div class="card"><div class="card-title"><span class="icon">✅</span>Green Flags</div>`;fl.forEach(f=>{h+=`<div class="flag-good">✓ ${f}</div>`});h+=`</div>`}
-const vf=a.verify_flags||[];if(vf.length){h+=`<div class="card"><div class="card-title"><span class="icon">⚠️</span>Verify These</div>`;vf.forEach(f=>{h+=`<div class="flag-verify">⚠ ${f}</div>`});h+=`</div>`}
-
-// What Owners Love
-const ol=a.what_owners_love||[];if(ol.length){h+=`<div class="card"><div class="card-title"><span class="icon">❤️</span>What Owners Love</div><div>`;ol.forEach(t=>{h+=`<span class="love-tag">${t}</span>`});h+=`</div></div>`}
-
-// Deal Analysis
-if(da.summary||da.market_avg_price){
-h+=`<div class="card"><div class="card-title"><span class="icon">💰</span>Deal Analysis</div>`;
-if(da.market_avg_price){
-const avg=Number(da.market_avg_price),lo=Number(da.market_low||avg*.85),hi=Number(da.market_high||avg*1.15),cp=Number(v.price||0);
-const pct=Math.max(0,Math.min(100,((cp-lo)/(hi-lo))*100));
-h+=`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--text2);margin-bottom:6px"><span>Low: $${lo.toLocaleString()}</span><span>Avg: $${avg.toLocaleString()}</span><span>High: $${hi.toLocaleString()}</span></div>
-<div style="height:8px;background:var(--card2);border-radius:4px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:4px"></div></div>
-<div style="font-size:.88rem;margin-top:8px;font-weight:600">This car: $${cp.toLocaleString()} ${cp<avg?`<span style="color:var(--accent)">· $${(avg-cp).toLocaleString()} below average ✓</span>`:`<span style="color:var(--orange)">· $${(cp-avg).toLocaleString()} above average</span>`}</div></div>`}
-if(da.summary){h+=`<p style="color:var(--text2);font-size:.92rem;line-height:1.6">${da.summary}</p>`}
-h+=`</div>`}
-
-// Price Chart
-if(da.price_chart&&da.price_chart.length){
-h+=`<div class="card"><div class="card-title"><span class="icon">📊</span>Price Trend</div><div class="chart-container">`;
-const maxP=Math.max(...da.price_chart.map(c=>c.price||0));
-da.price_chart.forEach(c=>{const ht=maxP?((c.price/maxP)*100):10;h+=`<div class="chart-bar${c.is_this_car?' active':''}" style="height:${Math.max(ht,5)}%" title="${c.label}: $${(c.price||0).toLocaleString()}"></div>`});
-h+=`</div><div class="chart-labels"><span>${da.price_chart[0]?.label||''}</span><span>${da.price_chart[da.price_chart.length-1]?.label||''}</span></div></div>`}
-
-// Risk / What to Know
-const quirks=wtk.quirks||[];if(quirks.length){
-h+=`<div class="card"><div class="card-title"><span class="icon">🔍</span>What to Know About This Car</div>`;
-quirks.forEach(q=>{const sev=(q.severity||'').toLowerCase().replace(/\s/g,'_');
-h+=`<div class="quirk"><div class="quirk-head"><span class="quirk-name">${q.name||''}</span><span class="sev sev-${sev}">${q.severity||''}</span></div>
-<div class="quirk-detail">${q.detail||''}</div>${q.what_to_do?`<div class="quirk-action">→ ${q.what_to_do}</div>`:''}</div>`});h+=`</div>`}
-
-// Big Ticket
-const bt=wtk.big_ticket_items||[];if(bt.length){h+=`<div class="card"><div class="card-title"><span class="icon">🎯</span>Big Ticket Items to Watch</div>`;bt.forEach(b=>{h+=`<div class="big-ticket">${b}</div>`});h+=`</div>`}
-
-// Recalls
-const rec=nd.recalls||[];if(rec.length){h+=`<div class="card"><div class="card-title"><span class="icon">📋</span>Recall History (${rec.length})</div>`;
-rec.slice(0,5).forEach(r=>{h+=`<div class="quirk"><div class="quirk-name">${r.Component||''}</div><div class="quirk-detail">${r.Summary||''}</div></div>`});
-if(rec.length>5){h+=`<p style="color:var(--text3);font-size:.82rem;margin-top:8px">+ ${rec.length-5} more recalls on file</p>`}h+=`</div>`}
-
-// Maintenance
-const mi=gp.maintenance_items||[];if(mi.length){
-h+=`<div class="card"><div class="card-title"><span class="icon">🔧</span>Maintenance Roadmap</div>`;
-mi.forEach(m=>{const u=(m.urgency||'').toLowerCase().replace(/[\s\/]/g,'_');
-h+=`<div class="maint-row"><div class="maint-info"><div class="maint-svc">${m.service||''}</div><div class="maint-cost">${m.est_cost||''}</div>${m.why?`<div class="maint-why">${m.why}</div>`:''}</div><span class="urg urg-${u}">${m.urgency||''}</span></div>`});h+=`</div>`}
-
-// Game Plan - Smart Questions
-const sq=gp.smart_questions||[];if(sq.length){
-h+=`<div class="card"><div class="card-title"><span class="icon">🗣️</span>Smart Questions to Ask</div>`;
-sq.forEach((q,i)=>{h+=`<div class="step"><div class="step-n">${i+1}</div><div><div class="step-q">${q.question||''}</div>
-<div class="step-why">${q.why||''}</div>${q.good_answer?`<div class="step-sig"><span class="good">✓ Good: </span>${q.good_answer}</div>`:''}<br>${q.red_flag?`<div class="step-sig"><span class="warn">⚠ Red flag: </span>${q.red_flag}</div>`:''}</div></div>`});h+=`</div>`}
-
-// Depreciation
-if(a.depreciation_outlook){const dep=a.depreciation_outlook;
-h+=`<div class="card"><div class="card-title"><span class="icon">📉</span>Depreciation Outlook</div>
-<p style="color:var(--text2);font-size:.92rem">${dep.summary||''}</p>
-${dep.year_1?`<div style="margin-top:12px"><div class="glance-grid"><div class="glance-item"><div class="glance-label">1 Year</div><div class="glance-value">${dep.year_1}</div></div><div class="glance-item"><div class="glance-label">3 Years</div><div class="glance-value">${dep.year_3||'—'}</div></div></div></div>`:''}</div>`}
-
-// Cost to Own
-if(co.monthly_estimate||co.insurance_estimate){
-h+=`<div class="card"><div class="card-title"><span class="icon">💵</span>Cost to Own</div>`;
-if(co.otd_estimate){h+=`<div class="otd-box"><div class="otd-price">$${Number(co.otd_estimate).toLocaleString()}</div><div class="otd-lbl">Estimated Out-the-Door Price</div></div>`}
-h+=`<div class="cost-grid">
-${co.monthly_estimate?`<div class="cost-item"><div class="cost-val">$${co.monthly_estimate}</div><div class="cost-lbl">Monthly Payment</div></div>`:''}
-${co.insurance_estimate?`<div class="cost-item"><div class="cost-val">$${co.insurance_estimate}</div><div class="cost-lbl">Insurance/mo</div></div>`:''}
-${co.fuel_monthly?`<div class="cost-item"><div class="cost-val">$${co.fuel_monthly}</div><div class="cost-lbl">Fuel/mo</div></div>`:''}
+if(ag.best_thing||ag.know_before_you_go){h+=`<div class="card"><div class="card-title"><span class="icon">⚡</span>At a Glance</div><div class="glance-grid">
+<div class="glance-item"><div class="glance-label">Best Thing</div><div class="glance-value">${ag.best_thing||''}</div></div>
+<div class="glance-item"><div class="glance-label">Know Before You Go</div><div class="glance-value">${ag.know_before_you_go||''}</div></div></div></div>`}
+if(ra.score_context){h+=`<div class="card"><div class="card-title"><span class="icon">🛡️</span>Risk Assessment</div>
+<p style="color:var(--text2);font-size:0.92rem;margin-bottom:14px">${ra.score_context}</p>`;
+(ra.key_reassurances||[]).forEach(r=>{h+=`<div class="flag-good">✓ ${r}</div>`});
+(ra.items_to_verify||[]).forEach(r=>{h+=`<div class="flag-verify">◉ ${r}</div>`});h+='</div>'}
+if(da.price_vs_market){h+=`<div class="card"><div class="card-title"><span class="icon">📊</span>Deal Analysis</div>`;
+if(md&&md.price_buckets&&md.price_buckets.length){h+=`<div class="chart-container">`;
+const mx=Math.max(...md.price_buckets.map(b=>b.count));
+md.price_buckets.forEach(b=>{const pct=(b.count/mx)*100;const act=v.price>=b.min&&v.price<b.max;
+h+=`<div class="chart-bar${act?' active':''}" style="height:${Math.max(4,pct)}%" title="$${b.min.toLocaleString()}-$${b.max.toLocaleString()}: ${b.count} cars"></div>`});
+h+=`</div><div class="chart-labels"><span>$${md.min_price?.toLocaleString()||'?'}</span><span>$${md.max_price?.toLocaleString()||'?'}</span></div>`}
+h+=`<p style="margin-top:14px;font-size:0.92rem">${da.price_vs_market}</p>
+<p style="color:var(--text2);font-size:0.88rem;margin-top:8px">${da.why_this_price||''}</p>
+<p style="margin-top:8px;font-weight:600;font-size:0.92rem">${da.value_verdict||''}</p></div>`}
+if(wtk.generation_overview){h+=`<div class="card"><div class="card-title"><span class="icon">🔍</span>What to Know</div>
+<p style="color:var(--text2);font-size:0.92rem;margin-bottom:14px">${wtk.generation_overview}</p>`;
+if(wtk.what_owners_love?.length){h+=`<h4 class="section-head">What Owners Love</h4><div style="margin-bottom:14px">`;
+wtk.what_owners_love.forEach(l=>{h+=`<span class="love-tag">${l}</span>`});h+=`</div>`}
+if(wtk.known_quirks?.length){h+=`<h4 class="section-head">Known Quirks</h4>`;
+wtk.known_quirks.forEach(q=>{h+=`<div class="quirk"><div class="quirk-head"><span class="quirk-name">${q.item||''}</span><span class="sev sev-${(q.severity||'').replace(/\s/g,'_')}">${q.severity||''}</span></div>
+<div class="quirk-detail">${q.reality_check||''}</div><div class="quirk-action">→ ${q.what_to_do||''}</div></div>`})}
+if(wtk.big_ticket_watch){h+=`<h4 class="section-head">Big Ticket Watch</h4><div class="big-ticket">${wtk.big_ticket_watch}</div>`}
+if(wtk.maintenance_now?.length){h+=`<h4 class="section-head">Maintenance Due</h4>`;
+wtk.maintenance_now.forEach(m=>{h+=`<div class="maint-row"><div class="maint-info"><div class="maint-svc">${m.service||''}</div><div class="maint-cost">${m.cost||''}</div><div class="maint-why">${m.why||''}</div></div>
+<span class="urg urg-${(m.urgency||'').replace(/\s/g,'_')}">${m.urgency||''}</span></div>`})}
+h+='</div>'}
+if(gp.smart_questions?.length||gp.before_you_go?.length){h+=`<div class="card"><div class="card-title"><span class="icon">💬</span>Your Game Plan</div>`;
+if(gp.before_you_go?.length){h+=`<h4 class="section-head">Before You Go</h4><ul class="check-list">`;
+gp.before_you_go.forEach(b=>{h+=`<li>${b}</li>`});h+=`</ul>`}
+if(gp.smart_questions?.length){h+=`<h4 class="section-head">Questions to Ask</h4>`;
+gp.smart_questions.forEach((q,i)=>{h+=`<div class="step"><div class="step-n">${i+1}</div><div><div class="step-q">"${q.ask||''}"</div>
+<div class="step-why">${q.why_this_matters||''}</div>
+<div class="step-sig"><span class="good">✓ ${q.good_answer||''}</span></div>
+<div class="step-sig"><span class="warn">⚠ ${q.dig_deeper_if||''}</span></div></div></div>`})}
+if(gp.test_drive_checklist?.length){h+=`<h4 class="section-head">Test Drive Checklist</h4><ul class="check-list">`;
+gp.test_drive_checklist.forEach(t=>{h+=`<li>${t}</li>`});h+=`</ul>`}
+const desk=gp.at_the_desk;
+if(desk){h+=`<h4 class="section-head">At the Desk</h4>`;
+if(desk.expected_otd_range){h+=`<div class="otd-box"><div class="otd-price">${desk.expected_otd_range}</div><div class="otd-lbl">Expected Out-the-Door</div></div>`}
+if(desk.standard_fees?.length){h+=`<ul class="fee-list">`;desk.standard_fees.forEach(f=>{h+=`<li>✓ ${f}</li>`});h+=`</ul>`}
+if(desk.fees_worth_asking_about?.length){h+=`<ul class="fee-list">`;desk.fees_worth_asking_about.forEach(f=>{h+=`<li class="q">? ${f}</li>`});h+=`</ul>`}
+if(desk.financing_intel){h+=`<p style="color:var(--text2);font-size:0.88rem;margin-top:8px">${desk.financing_intel}</p>`}}
+h+='</div>'}
+if(co&&(co.monthly_fuel||co.total_monthly_cost)){h+=`<div class="card"><div class="card-title"><span class="icon">💰</span>Cost to Own</div>
+<div class="cost-grid">`;
+if(co.monthly_fuel){h+=`<div class="cost-item"><div class="cost-val">${co.monthly_fuel}</div><div class="cost-lbl">Monthly Fuel</div></div>`}
+if(co.annual_insurance_estimate){h+=`<div class="cost-item"><div class="cost-val">${co.annual_insurance_estimate}</div><div class="cost-lbl">Annual Insurance</div></div>`}
+if(co.annual_maintenance){h+=`<div class="cost-item"><div class="cost-val">${co.annual_maintenance}</div><div class="cost-lbl">Annual Maint.</div></div>`}
 </div>`;
-if(co.total_3yr){h+=`<div style="text-align:center;margin-top:14px;color:var(--text2);font-size:.88rem">Estimated 3-year cost: <strong style="color:var(--text)">$${Number(co.total_3yr).toLocaleString()}</strong></div>`}
-// Fees
-const fees=co.watch_for_fees||[];if(fees.length){h+=`<h4 class="section-head">Fees to Watch</h4><ul class="fee-list">`;fees.forEach(f=>{h+=`<li class="${f.questionable?'q':''}">• ${f.name||f}: ${f.typical||''} ${f.questionable?'⚠️':''}</li>`});h+=`</ul>`}
-h+=`</div>`}
-
-// Pro Tips
-if(tips.length){h+=`<div class="card"><div class="card-title"><span class="icon">💎</span>Pro Tips</div>`;tips.forEach(t=>{h+=`<div class="tip">${t}</div>`});h+=`</div>`}
-
-// Test Drive Checklist
-const td=gp.test_drive_checklist||[];if(td.length){h+=`<div class="card"><div class="card-title"><span class="icon">🚗</span>Test Drive Checklist</div><ul class="check-list">`;td.forEach(c=>{h+=`<li>${c}</li>`});h+=`</ul></div>`}
-
-// Powered by
-h+=`<div style="text-align:center;padding:28px;color:var(--text3);font-size:.78rem">Powered by <strong style="color:var(--text2)">AskCarBuddy</strong> AI · Data from NHTSA, market listings & owner communities</div>`;
+if(co.total_monthly_cost){h+=`<div class="otd-box" style="margin-top:14px"><div class="otd-price">${co.total_monthly_cost}</div><div class="otd-lbl">Estimated Total Monthly Cost</div></div>`}
+if(co.first_year_budget){h+=`<p style="color:var(--text2);font-size:0.88rem;margin-top:10px">${co.first_year_budget}</p>`}
+if(co.depreciation_outlook){h+=`<p style="color:var(--text2);font-size:0.88rem;margin-top:6px">${co.depreciation_outlook}</p>`}
+if(co.verdict){h+=`<p style="font-weight:600;margin-top:10px;font-size:0.92rem">${co.verdict}</p>`}
+h+='</div>'}
+if(tips?.length){h+=`<div class="card"><div class="card-title"><span class="icon">💡</span>Pro Tips</div>`;
+tips.forEach(t=>{h+=`<div class="tip">${t}</div>`});h+=`</div>`}
 return h;
 }
-
-// === SCROLL REVEAL ===
-const observer=new IntersectionObserver((entries)=>{
-entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}})
-},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
-document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
-
-// === NAV SCROLL ===
-let lastScroll=0;
-window.addEventListener('scroll',()=>{
-const nav=document.querySelector('.nav');
-const st=window.scrollY;
-if(st>100){nav.style.background='rgba(5,5,7,.95)'}else{nav.style.background='rgba(5,5,7,.8)'}
-lastScroll=st;
-});
-
-// === SMOOTH ANCHOR ===
-document.querySelectorAll('a[href^="#"]').forEach(a=>{
-a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})})
-});
 </script>
 </body>
 </html>
