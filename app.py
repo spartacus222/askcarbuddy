@@ -54,7 +54,7 @@ EXA_SEARCH_URL    = "https://api.exa.ai/search"
 
 
 # ==============================================================
-# SELF-IMPROVING AGENT — PHASE 1: TRACE STORE + LEARNING LOOP
+# SELF-IMPROVING AGENT â PHASE 1: TRACE STORE + LEARNING LOOP
 # ==============================================================
 
 import sqlite3
@@ -389,7 +389,7 @@ def extract_ymm_from_url(url):
     return {}
 
 def nhtsa_vin_decode(vin):
-    """Decode VIN via NHTSA â FREE, reliable, gives year/make/model/trim/specs."""
+    """Decode VIN via NHTSA Ã¢ÂÂ FREE, reliable, gives year/make/model/trim/specs."""
     try:
         resp = requests.get(f"https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/{vin}?format=json", timeout=10)
         if resp.status_code == 200:
@@ -436,7 +436,7 @@ def scrape_listing_basic(url):
     return ""
 
 def extract_vehicle_from_text(text):
-    """Extract vehicle info from HTML/text â price, mileage, VIN, and title-based YMM."""
+    """Extract vehicle info from HTML/text Ã¢ÂÂ price, mileage, VIN, and title-based YMM."""
     info = {}
     # Price
     price_match = re.search(r'\$(\d{1,3},?\d{3})', text)
@@ -455,7 +455,7 @@ def extract_vehicle_from_text(text):
     og = re.search(r'<meta[^>]*property=["\'"]og:title["\'"][^>]*content=["\'"]([^"\'"]*)', text, re.IGNORECASE)
     title_text = (og.group(1) if og else title.group(1) if title else "").strip()
     if title_text:
-        ymm = re.search(r'(20\d{2}|19\d{2})\s+([A-Za-z]+)\s+([A-Za-z0-9][A-Za-z0-9\- ]+?)(?:\s+[-|Â·â¢]|\s+for\s|\s+in\s|$)', title_text)
+        ymm = re.search(r'(20\d{2}|19\d{2})\s+([A-Za-z]+)\s+([A-Za-z0-9][A-Za-z0-9\- ]+?)(?:\s+[-|ÃÂ·Ã¢ÂÂ¢]|\s+for\s|\s+in\s|$)', title_text)
         if ymm:
             info["year"] = int(ymm.group(1))
             info["make"] = ymm.group(2).strip()
@@ -490,7 +490,7 @@ def extract_vehicle_from_text(text):
 
 
 # ==============================================================
-# NHTSA VIN DECODE ÃÂ¢ÃÂÃÂ get exact specs
+# NHTSA VIN DECODE ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ get exact specs
 # ==============================================================
 
 def decode_vin_nhtsa(vin):
@@ -524,7 +524,7 @@ def decode_vin_nhtsa(vin):
 
 
 # ==============================================================
-# AUTO.DEV ÃÂ¢ÃÂÃÂ VIN lookup + market comps
+# AUTO.DEV ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ VIN lookup + market comps
 # ==============================================================
 
 def lookup_vin_autodev(vin):
@@ -615,7 +615,7 @@ def get_market_comps(year, make, model, trim=None, zip_code=None, listing_price=
 
 
 # ==============================================================
-# NHTSA ÃÂ¢ÃÂÃÂ recalls + complaints
+# NHTSA ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ recalls + complaints
 # ==============================================================
 
 def get_nhtsa_data(year, make, model):
@@ -653,7 +653,7 @@ def get_nhtsa_data(year, make, model):
                 areas[comp] = areas.get(comp, 0) + 1
             result["top_complaint_areas"] = sorted(areas.items(), key=lambda x: -x[1])[:8]
     except: pass
-    # Risk score ÃÂ¢ÃÂÃÂ realistic calibration
+    # Risk score ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ realistic calibration
     cc = result["complaint_count"]
     if cc <= 20: complaint_pts = 0
     elif cc <= 50: complaint_pts = 0.5
@@ -706,7 +706,7 @@ def get_dealer_reputation(dealer_name, dealer_location=None):
 
 
 # ==============================================================
-# WEB RESEARCH ÃÂ¢ÃÂÃÂ Exa search for model-specific intelligence
+# WEB RESEARCH ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Exa search for model-specific intelligence
 # ==============================================================
 
 def research_model_year(year, make, model, trim=None):
@@ -780,7 +780,7 @@ def _exa_multi_search(queries, max_results=3, max_chars=1500):
 SECTION_PROMPTS = {
     "model_year_summary": """You are a car expert writing one section of a buyer report.
 
-SECTION: "Know Your Car" — Model Year Summary
+SECTION: "Know Your Car" â Model Year Summary
 VEHICLE: {vehicle_str}
 
 TASK: Write a concise summary of what makes this model year special. What generation is it? 
@@ -791,7 +791,7 @@ What changed vs previous year? Key highlights (engine, tech, safety, design). In
 OUTPUT FORMAT (JSON):
 {{
   "headline": "<one punchy line about this model year>",
-  "generation": "<which generation — e.g., '4th Generation (2016-2023)'>",
+  "generation": "<which generation â e.g., '4th Generation (2016-2023)'>",
   "what_changed_this_year": "<specific changes for this model year>",
   "highlights": ["<highlight 1>", "<highlight 2>", "<highlight 3>"],
   "engine_and_drivetrain": "<1-2 sentences about powertrain>",
@@ -806,7 +806,7 @@ RULES:
 
     "vehicle_history": """You are a car expert writing one section of a buyer report.
 
-SECTION: "The History" — Vehicle Safety & Recall Data  
+SECTION: "The History" â Vehicle Safety & Recall Data  
 VEHICLE: {vehicle_str}
 
 TASK: Summarize the NHTSA recall and complaint data for this model year. Frame recalls as 
@@ -816,25 +816,25 @@ FREE manufacturer fixes (positive framing). Be factual and helpful, not scary.
 
 OUTPUT FORMAT (JSON):
 {{
-  "headline": "<one line — e.g., 'Clean model year with 2 recalls — both are free dealer fixes'>",
+  "headline": "<one line â e.g., 'Clean model year with 2 recalls â both are free dealer fixes'>",
   "recalls_for_model_year": <integer>,
   "recall_details": ["<brief description of each recall + that it's a free fix>"],
   "complaints_for_model_year": <integer>,
   "common_complaint_areas": "<factual summary of top categories if any>",
   "carfax_tip": "<specific advice about what to look for on Carfax for THIS car>",
-  "nhtsa_source": "NHTSA data for {year} {make} {model} model year — check this specific VIN at nhtsa.gov/recalls"
+  "nhtsa_source": "NHTSA data for {year} {make} {model} model year â check this specific VIN at nhtsa.gov/recalls"
 }}
 
 RULES:
 - If 0 recalls, say that clearly as a positive
 - If 0 complaints, say that clearly as a positive
 - Frame recalls as free fixes, not scary defects
-- ONLY cite data provided — do NOT invent recalls or complaints
-- NHTSA data is for the MODEL YEAR, not this specific VIN — say that""",
+- ONLY cite data provided â do NOT invent recalls or complaints
+- NHTSA data is for the MODEL YEAR, not this specific VIN â say that""",
 
     "price_analysis": """You are a car market analyst writing one section of a buyer report.
 
-SECTION: "The Price" — Market Comparison
+SECTION: "The Price" â Market Comparison
 VEHICLE: {vehicle_str}
 
 TASK: Analyze this car's price vs local market comps within 50 miles. Is it a good deal? 
@@ -845,23 +845,23 @@ Use the actual numbers provided. Give a verdict and explain WHY.
 OUTPUT FORMAT (JSON):
 {{
   "verdict": "<Great Deal|Good Deal|Fair Price|Slightly Above Market>",
-  "vs_market": "<exact comparison — e.g., '$1,290 above the $12,145 median of 6 local comps'>",
+  "vs_market": "<exact comparison â e.g., '$1,290 above the $12,145 median of 6 local comps'>",
   "comp_count": "<number of comparable listings within 50 miles>",
-  "price_range": "<local price range — e.g., '$9,295 - $14,995'>",
-  "fair_range": "<what you'd expect to pay — e.g., '$11,500 - $13,500'>",
-  "context": "<2-3 sentences explaining WHY — trim, mileage, condition vs comps. Cite numbers.>",
+  "price_range": "<local price range â e.g., '$9,295 - $14,995'>",
+  "fair_range": "<what you'd expect to pay â e.g., '$11,500 - $13,500'>",
+  "context": "<2-3 sentences explaining WHY â trim, mileage, condition vs comps. Cite numbers.>",
   "bottom_line": "<one decisive sentence>"
 }}
 
 RULES:
 - ONLY use the market data numbers provided
 - If no comp data, say "No comparable listings found within 50 miles" 
-- Cite exact numbers from the data — never approximate when you have real figures
-- Be helpful — if it's above market, explain what might justify it""",
+- Cite exact numbers from the data â never approximate when you have real figures
+- Be helpful â if it's above market, explain what might justify it""",
 
     "owner_feedback": """You are a car expert writing one section of a buyer report.
 
-SECTION: "Owner Talk" — What Real Owners Say
+SECTION: "Owner Talk" â What Real Owners Say
 VEHICLE: {vehicle_str}
 
 TASK: Summarize what real owners say about this car based ONLY on the web research data below.
@@ -870,9 +870,9 @@ TASK: Summarize what real owners say about this car based ONLY on the web resear
 
 OUTPUT FORMAT (JSON):
 {{
-  "headline": "<one line from REAL research — cite source if possible>",
+  "headline": "<one line from REAL research â cite source if possible>",
   "what_owners_love": ["<from research data>", "<from research data>"],
-  "what_owners_wish_they_knew": ["<from research data — cite source>"],
+  "what_owners_wish_they_knew": ["<from research data â cite source>"],
   "common_experiences": "<2-3 sentences from real owner perspectives>",
   "reliability_reputation": "<one sentence on reliability reputation>"
 }}
@@ -882,23 +882,25 @@ CRITICAL RULES:
 - Cite sources: "Owners on PriusChat report..." or "Reddit users mention..."
 - If the research data is empty or doesn't contain owner experiences, return:
   {{
-    "headline": "Limited owner data found — check Reddit and forums for real experiences",
-    "what_owners_love": ["Research data was limited for this specific model — check r/{make_lower} and model-specific forums"],
+    "headline": "Limited owner data found â check Reddit and forums for real experiences",
+    "what_owners_love": ["Research data was limited for this specific model â check r/{make_lower} and model-specific forums"],
     "what_owners_wish_they_knew": ["No specific owner insights found in research"],
     "common_experiences": "Limited owner-specific feedback available in our research. For real owner experiences, check Reddit r/{make_lower}, model-specific forums, and long-term review videos on YouTube.",
     "reliability_reputation": "Check Consumer Reports and J.D. Power for official reliability ratings for the {year} {make} {model}."
   }}
-- BANNED: "Some owners wish they knew about regular maintenance" — that's generic filler
-- BANNED: "It's important to stay up to date on recalls" — obvious and unhelpful  
+- BANNED: "Some owners wish they knew about regular maintenance" â that's generic filler
+- BANNED: "It's important to stay up to date on recalls" â obvious and unhelpful  
 - Every bullet MUST come from the research data or honestly say "not found"
 - NO FABRICATED OWNER SENTIMENT""",
 
     "dealer_questions": """You are a car buying expert writing one section of a buyer report.
 
-SECTION: "Go Prepared" — Smart Questions for the Dealer
+SECTION: "Go Prepared" â Smart Questions for the Dealer
 VEHICLE: {vehicle_str}
+MILEAGE: {mileage}
+PRICE: {price}
 
-TASK: Generate 5-7 smart, specific questions a buyer should ask about THIS car. 
+TASK: Generate 5-7 smart, specific questions a buyer should ask about THIS specific car.
 Use the vehicle data, NHTSA data, and research to craft questions that show homework.
 
 {data_context}
@@ -907,7 +909,7 @@ OUTPUT FORMAT (JSON):
 {{
   "questions": [
     {{
-      "ask": "<the exact question — specific to THIS car>",
+      "ask": "<the exact question â specific to THIS car>",
       "why_it_matters": "<what the answer tells you>",
       "good_answer": "<what you want to hear>"
     }}
@@ -915,67 +917,75 @@ OUTPUT FORMAT (JSON):
   "bonus_tip": "<one insider tip about buying THIS type of car>"
 }}
 
+CRITICAL MILEAGE RULE:
+This car has {mileage}. ALL questions MUST be appropriate for that mileage.
+- Under 1,000 miles = essentially NEW. Ask about warranty coverage, break-in period, dealer incentives, why it's still on the lot. Do NOT ask about timing belts, transmission flushes, brake wear, or any high-mileage maintenance.
+- 1,000-30,000 miles = low mileage. Ask about remaining factory warranty, first-owner history, any open recalls.
+- 30,000-100,000 miles = moderate. Ask about major service milestones completed (30k/60k/90k service).
+- Over 100,000 miles = high mileage. Ask about timing belt/chain service, transmission service, major repairs done.
+
 RULES:
-- Questions MUST reference this specific year/make/model
-- If NHTSA recalls exist, include a question about whether they've been addressed
-- If mileage is high, include a question about relevant service milestones
-- BANNED: "Can I see the Carfax?" — too generic
-- BANNED: "Has this car been in any accidents?" — too generic
+- Questions MUST reference this specific {year} {make} {model}
+- Questions MUST match the ACTUAL mileage of {mileage} â do NOT generate questions for a different mileage
+- If NHTSA recalls exist in the data, include a question about whether they've been addressed
+- BANNED: "Can I see the Carfax?" â too generic
+- BANNED: "Has this car been in any accidents?" â too generic
+- BANNED: Any question about high-mileage maintenance on a car with under 10,000 miles
 - Each question should show the buyer did their homework"""
 }
 
 
 # ==============================================================
-# AI SYSTEM PROMPT v4 ÃÂ¢ÃÂÃÂ IDENTITY-ANCHORED INTELLIGENCE
+# AI SYSTEM PROMPT v4 ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ IDENTITY-ANCHORED INTELLIGENCE
 # ==============================================================
 # The key insight: instead of one massive prompt that says "be specific",
 # we build a VEHICLE IDENTITY CARD that the model must reference in every answer.
 # Then we use a two-pass approach: research context first, then generate.
 
 
-ANALYSIS_SYSTEM_PROMPT = """You are AskCarBuddy — an AI car buying assistant built by someone with 20 years of dealership experience.
+ANALYSIS_SYSTEM_PROMPT = """You are AskCarBuddy â an AI car buying assistant built by someone with 20 years of dealership experience.
 
 YOUR JOB: The buyer found a car they WANT. Help them walk in confident and informed. You are their knowledgeable friend who did the research for them.
 
-TONE: Warm, positive, informative. Think "car-savvy friend texting you what they found" — not a legal document or consumer report. You LIKE cars. You want them to enjoy this purchase.
+TONE: Warm, positive, informative. Think "car-savvy friend texting you what they found" â not a legal document or consumer report. You LIKE cars. You want them to enjoy this purchase.
 
 ====================================================================
-ABSOLUTE RULE #0 — NO FAKE DATA — OVERRIDES EVERYTHING
+ABSOLUTE RULE #0 â NO FAKE DATA â OVERRIDES EVERYTHING
 ====================================================================
 
-DO NOT FABRICATE DATA. If the provided context does not contain a specific number, stat, date, recall ID, complaint count — DO NOT INVENT IT.
+DO NOT FABRICATE DATA. If the provided context does not contain a specific number, stat, date, recall ID, complaint count â DO NOT INVENT IT.
 
 - Data from context below: cite confidently
 - General automotive knowledge: label as "generally" or "typically"
 - Specific stats you're making up: BANNED. NEVER DO THIS.
 
 ====================================================================
-RULE #1 — THIS CAR ONLY
+RULE #1 â THIS CAR ONLY
 ====================================================================
 
-EVERY sentence must be about THIS specific car — the {year} {make} {model}. 
+EVERY sentence must be about THIS specific car â the {year} {make} {model}. 
 If you catch yourself writing generic advice that applies to all cars, DELETE IT.
 
-❌ BANNED phrases: "It's important to...", "In general...", "Make sure to always...", "Vehicles like this..."
-✅ REQUIRED: Name this car, its generation, its engine, or its specific components in every paragraph.
+â BANNED phrases: "It's important to...", "In general...", "Make sure to always...", "Vehicles like this..."
+â REQUIRED: Name this car, its generation, its engine, or its specific components in every paragraph.
 
 ====================================================================
-THE 5 SECTIONS — WHAT EACH ONE DOES
+THE 5 SECTIONS â WHAT EACH ONE DOES
 ====================================================================
 
 SECTION 1: "Know Your Car" (model_year_summary)
-Help the buyer understand what they're looking at. What generation is this? What changed this year? What's the engine/drivetrain story? What are the highlights that make this model year special? Think of it as the "Wikipedia summary meets enthusiast review" — condensed into something useful. If you have web research data, USE IT to provide real generation-specific info.
+Help the buyer understand what they're looking at. What generation is this? What changed this year? What's the engine/drivetrain story? What are the highlights that make this model year special? Think of it as the "Wikipedia summary meets enthusiast review" â condensed into something useful. If you have web research data, USE IT to provide real generation-specific info.
 
 SECTION 2: "The History" (vehicle_history)
-Use any available data: NHTSA recalls for this model year, complaint data, known TSBs. Frame recalls as "these exist for the model year — check if this VIN is affected at nhtsa.gov/recalls." Mention Carfax as something the buyer should ask for. This section should make the buyer feel informed, not scared.
+Use any available data: NHTSA recalls for this model year, complaint data, known TSBs. Frame recalls as "these exist for the model year â check if this VIN is affected at nhtsa.gov/recalls." Mention Carfax as something the buyer should ask for. This section should make the buyer feel informed, not scared.
 
 SECTION 3: "The Price" (price_analysis)
 Use the market comparison data provided. How many comparable cars exist within 50 miles? Where does THIS car sit vs the median? Is it a good deal, fair deal, or slightly high? CITE THE ACTUAL NUMBERS. If this car is above median, explain WHY (lower miles, better trim, etc.). If below, say what a win that is. Give them a fair price range based on actual local comps.
 
 SECTION 4: "Owner Talk" (owner_feedback)
-What do real owners of this generation say? ONLY use information from the web research data provided. If the web research contains actual owner experiences, forum posts, Reddit threads, or review quotes — use those. Be specific: "Owners on PriusChat report..." or "Reddit users mention..."
+What do real owners of this generation say? ONLY use information from the web research data provided. If the web research contains actual owner experiences, forum posts, Reddit threads, or review quotes â use those. Be specific: "Owners on PriusChat report..." or "Reddit users mention..."
 
-CRITICAL: Do NOT fabricate generic owner wisdom. Statements like "some owners wish they knew about regular maintenance" or "others wish they knew about recall notices" are BANNED — that's filler, not research. Every bullet point must come from an actual source in the web research data. If the web research doesn't contain owner feedback, write: "Limited owner-specific feedback found in research — check Reddit r/[make] and model-specific forums for real owner experiences."
+CRITICAL: Do NOT fabricate generic owner wisdom. Statements like "some owners wish they knew about regular maintenance" or "others wish they knew about recall notices" are BANNED â that's filler, not research. Every bullet point must come from an actual source in the web research data. If the web research doesn't contain owner feedback, write: "Limited owner-specific feedback found in research â check Reddit r/[make] and model-specific forums for real owner experiences."
 
 SECTION 5: "Go Prepared" (dealer_questions)
 Give them 5-7 smart, specific questions to ask the dealer about THIS car. Not generic "can I see the Carfax" stuff. Questions that show they did their homework and will get them useful information. For each question, explain what the answer tells them.
@@ -986,10 +996,10 @@ QUALITY RULES
 
 1. If you can Google it in 5 seconds, don't include it
 2. Every question must be specific to this year/make/model
-3. No scare tactics — this is about helping them buy smart, not scaring them away
-4. Cite actual numbers from the data provided — don't round or approximate when you have exact figures
-5. Keep it concise — buyers want quick intel, not essays
-6. Owner Feedback MUST come from web research data — NEVER generate generic owner wisdom from your training data. If research doesn't include owner experiences, say so honestly. "Some owners wish they knew about regular maintenance" is BANNED — that's filler, not intel.
+3. No scare tactics â this is about helping them buy smart, not scaring them away
+4. Cite actual numbers from the data provided â don't round or approximate when you have exact figures
+5. Keep it concise â buyers want quick intel, not essays
+6. Owner Feedback MUST come from web research data â NEVER generate generic owner wisdom from your training data. If research doesn't include owner experiences, say so honestly. "Some owners wish they knew about regular maintenance" is BANNED â that's filler, not intel.
 """
 
 
@@ -1001,70 +1011,70 @@ QUALITY RULES
 
 ANALYSIS_JSON_SCHEMA = """{
   "overall_score": {
-    "score": <0.0-10.0 with one decimal — buying confidence score>,
+    "score": <0.0-10.0 with one decimal â buying confidence score>,
     "label": "<Strong Buy|Buy|Lean Buy|Neutral|Lean Pass>",
-    "one_liner": "<one decisive sentence naming the car — e.g., 'Clean 2017 Prius with solid service history at a fair local price — smart buy for a commuter'>"
+    "one_liner": "<one decisive sentence naming the car â e.g., 'Clean 2017 Prius with solid service history at a fair local price â smart buy for a commuter'>"
   },
   "model_year_summary": {
-    "headline": "<one punchy line — e.g., 'The 4th-gen Prius brought a complete redesign with 10% better fuel economy'>",
-    "generation": "<which generation this is — e.g., '4th Generation (2016-2023)'>",
-    "what_changed_this_year": "<what Toyota/Honda/etc changed for this model year vs previous — be specific>",
+    "headline": "<one punchy line â e.g., 'The 4th-gen Prius brought a complete redesign with 10% better fuel economy'>",
+    "generation": "<which generation this is â e.g., '4th Generation (2016-2023)'>",
+    "what_changed_this_year": "<what Toyota/Honda/etc changed for this model year vs previous â be specific>",
     "highlights": [
-      "<specific highlight of this model year — engine, tech, safety, design>",
+      "<specific highlight of this model year â engine, tech, safety, design>",
       "<another highlight>",
       "<another highlight>"
     ],
-    "engine_and_drivetrain": "<1-2 sentences about the powertrain — what it is, how it performs, reliability reputation>",
+    "engine_and_drivetrain": "<1-2 sentences about the powertrain â what it is, how it performs, reliability reputation>",
     "fun_fact": "<one interesting thing about this generation that most people don't know>"
   },
   "vehicle_history": {
-    "headline": "<one line summary — e.g., 'Clean model year with 2 recalls on record — both are free dealer fixes'>",
+    "headline": "<one line summary â e.g., 'Clean model year with 2 recalls on record â both are free dealer fixes'>",
     "recalls_for_model_year": <integer count from NHTSA data>,
-    "recall_details": ["<if recalls exist: brief description of each — what it is + that it's a free fix>"],
+    "recall_details": ["<if recalls exist: brief description of each â what it is + that it's a free fix>"],
     "complaints_for_model_year": <integer count from NHTSA data>,
     "common_complaint_areas": "<if complaints exist: factual summary of top categories>",
-    "carfax_tip": "<specific advice about what to look for on the Carfax for THIS car — e.g., 'For a 2017 Prius at 150K, you want to see consistent hybrid system service intervals. Ask for the Carfax and look for battery health checks after 100K.'>",
-    "nhtsa_source": "<Always: 'NHTSA data for [year] [make] [model] model year — check this specific VIN at nhtsa.gov/recalls'>"
+    "carfax_tip": "<specific advice about what to look for on the Carfax for THIS car â e.g., 'For a 2017 Prius at 150K, you want to see consistent hybrid system service intervals. Ask for the Carfax and look for battery health checks after 100K.'>",
+    "nhtsa_source": "<Always: 'NHTSA data for [year] [make] [model] model year â check this specific VIN at nhtsa.gov/recalls'>"
   },
   "price_analysis": {
     "verdict": "<Great Deal|Good Deal|Fair Price|Slightly Above Market>",
-    "vs_market": "<exact comparison — e.g., '$1,290 above the $12,145 median of 6 local comps'>",
+    "vs_market": "<exact comparison â e.g., '$1,290 above the $12,145 median of 6 local comps'>",
     "comp_count": "<number of comparable listings within 50 miles>",
-    "price_range": "<local price range — e.g., '$9,295 - $14,995'>",
-    "fair_range": "<what you'd expect to pay — e.g., '$11,500 - $13,500'>",
-    "context": "<2-3 sentences explaining WHY this car is priced where it is — trim, mileage, condition vs local comps. Use actual numbers.>",
-    "bottom_line": "<one sentence final take — e.g., 'Slightly above median but justified by lower mileage and nav package. Fair price for what you're getting.'>"
+    "price_range": "<local price range â e.g., '$9,295 - $14,995'>",
+    "fair_range": "<what you'd expect to pay â e.g., '$11,500 - $13,500'>",
+    "context": "<2-3 sentences explaining WHY this car is priced where it is â trim, mileage, condition vs local comps. Use actual numbers.>",
+    "bottom_line": "<one sentence final take â e.g., 'Slightly above median but justified by lower mileage and nav package. Fair price for what you're getting.'>"
   },
   "owner_feedback": {
-    "headline": "<one line from REAL research — e.g., 'Reddit owners love the 50+ MPG but warn about road noise on highways'>",
+    "headline": "<one line from REAL research â e.g., 'Reddit owners love the 50+ MPG but warn about road noise on highways'>",
     "what_owners_love": [
-      "<specific thing owners rave about — from forums/reviews/web research>",
+      "<specific thing owners rave about â from forums/reviews/web research>",
       "<another thing>",
       "<another thing>"
     ],
     "what_owners_wish_they_knew": [
-      "<MUST be from actual web research — e.g., 'PriusChat users say the 12V battery dies without warning around year 5' — NO generic advice like 'regular maintenance is important'>",
-      "<another specific thing from research — or omit this array if no real owner insights found>"
+      "<MUST be from actual web research â e.g., 'PriusChat users say the 12V battery dies without warning around year 5' â NO generic advice like 'regular maintenance is important'>",
+      "<another specific thing from research â or omit this array if no real owner insights found>"
     ],
-    "common_experiences": "<2-3 sentences about what daily ownership is actually like — from real owner perspectives>",
+    "common_experiences": "<2-3 sentences about what daily ownership is actually like â from real owner perspectives>",
     "reliability_reputation": "<one sentence on how this generation is regarded for reliability>"
   },
   "dealer_questions": {
     "questions": [
       {
-        "ask": "<the exact question to ask — specific to THIS car>",
+        "ask": "<the exact question to ask â specific to THIS car>",
         "why_it_matters": "<what the answer tells you about the car>",
         "good_answer": "<what you want to hear>"
       }
     ],
-    "bonus_tip": "<one insider tip about the buying process for THIS car — e.g., 'Toyota CPO warranty on a Prius covers the hybrid battery for an extra 12 months — ask if this qualifies'>"
+    "bonus_tip": "<one insider tip about the buying process for THIS car â e.g., 'Toyota CPO warranty on a Prius covers the hybrid battery for an extra 12 months â ask if this qualifies'>"
   }
 }"""
 
 
 
 # ==============================================================
-# AI ANALYSIS GENERATOR v4 ÃÂ¢ÃÂÃÂ Identity-anchored, two-context
+# AI ANALYSIS GENERATOR v4 ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Identity-anchored, two-context
 # ==============================================================
 
 def build_vehicle_identity(vehicle_info, vin_decode=None):
@@ -1072,7 +1082,7 @@ def build_vehicle_identity(vehicle_info, vin_decode=None):
     v = vehicle_info
     lines = []
     lines.append("=" * 50)
-    lines.append("VEHICLE IDENTITY CARD ÃÂ¢ÃÂÃÂ Reference this in EVERY answer")
+    lines.append("VEHICLE IDENTITY CARD ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Reference this in EVERY answer")
     lines.append("=" * 50)
 
     year = v.get('year', '?')
@@ -1118,7 +1128,7 @@ def build_vehicle_identity(vehicle_info, vin_decode=None):
 SECTION_PROMPTS = {
     "model_year_summary": """You are a car expert writing one section of a buyer report.
 
-SECTION: "Know Your Car" — Model Year Summary
+SECTION: "Know Your Car" â Model Year Summary
 VEHICLE: {vehicle_str}
 
 TASK: Write a concise summary of what makes this model year special. What generation is it? 
@@ -1129,7 +1139,7 @@ What changed vs previous year? Key highlights (engine, tech, safety, design). In
 OUTPUT FORMAT (JSON):
 {{
   "headline": "<one punchy line about this model year>",
-  "generation": "<which generation — e.g., '4th Generation (2016-2023)'>",
+  "generation": "<which generation â e.g., '4th Generation (2016-2023)'>",
   "what_changed_this_year": "<specific changes for this model year>",
   "highlights": ["<highlight 1>", "<highlight 2>", "<highlight 3>"],
   "engine_and_drivetrain": "<1-2 sentences about powertrain>",
@@ -1144,7 +1154,7 @@ RULES:
 
     "vehicle_history": """You are a car expert writing one section of a buyer report.
 
-SECTION: "The History" — Vehicle Safety & Recall Data  
+SECTION: "The History" â Vehicle Safety & Recall Data  
 VEHICLE: {vehicle_str}
 
 TASK: Summarize the NHTSA recall and complaint data for this model year. Frame recalls as 
@@ -1154,25 +1164,25 @@ FREE manufacturer fixes (positive framing). Be factual and helpful, not scary.
 
 OUTPUT FORMAT (JSON):
 {{
-  "headline": "<one line — e.g., 'Clean model year with 2 recalls — both are free dealer fixes'>",
+  "headline": "<one line â e.g., 'Clean model year with 2 recalls â both are free dealer fixes'>",
   "recalls_for_model_year": <integer>,
   "recall_details": ["<brief description of each recall + that it's a free fix>"],
   "complaints_for_model_year": <integer>,
   "common_complaint_areas": "<factual summary of top categories if any>",
   "carfax_tip": "<specific advice about what to look for on Carfax for THIS car>",
-  "nhtsa_source": "NHTSA data for {year} {make} {model} model year — check this specific VIN at nhtsa.gov/recalls"
+  "nhtsa_source": "NHTSA data for {year} {make} {model} model year â check this specific VIN at nhtsa.gov/recalls"
 }}
 
 RULES:
 - If 0 recalls, say that clearly as a positive
 - If 0 complaints, say that clearly as a positive
 - Frame recalls as free fixes, not scary defects
-- ONLY cite data provided — do NOT invent recalls or complaints
-- NHTSA data is for the MODEL YEAR, not this specific VIN — say that""",
+- ONLY cite data provided â do NOT invent recalls or complaints
+- NHTSA data is for the MODEL YEAR, not this specific VIN â say that""",
 
     "price_analysis": """You are a car market analyst writing one section of a buyer report.
 
-SECTION: "The Price" — Market Comparison
+SECTION: "The Price" â Market Comparison
 VEHICLE: {vehicle_str}
 
 TASK: Analyze this car's price vs local market comps within 50 miles. Is it a good deal? 
@@ -1183,23 +1193,23 @@ Use the actual numbers provided. Give a verdict and explain WHY.
 OUTPUT FORMAT (JSON):
 {{
   "verdict": "<Great Deal|Good Deal|Fair Price|Slightly Above Market>",
-  "vs_market": "<exact comparison — e.g., '$1,290 above the $12,145 median of 6 local comps'>",
+  "vs_market": "<exact comparison â e.g., '$1,290 above the $12,145 median of 6 local comps'>",
   "comp_count": "<number of comparable listings within 50 miles>",
-  "price_range": "<local price range — e.g., '$9,295 - $14,995'>",
-  "fair_range": "<what you'd expect to pay — e.g., '$11,500 - $13,500'>",
-  "context": "<2-3 sentences explaining WHY — trim, mileage, condition vs comps. Cite numbers.>",
+  "price_range": "<local price range â e.g., '$9,295 - $14,995'>",
+  "fair_range": "<what you'd expect to pay â e.g., '$11,500 - $13,500'>",
+  "context": "<2-3 sentences explaining WHY â trim, mileage, condition vs comps. Cite numbers.>",
   "bottom_line": "<one decisive sentence>"
 }}
 
 RULES:
 - ONLY use the market data numbers provided
 - If no comp data, say "No comparable listings found within 50 miles" 
-- Cite exact numbers from the data — never approximate when you have real figures
-- Be helpful — if it's above market, explain what might justify it""",
+- Cite exact numbers from the data â never approximate when you have real figures
+- Be helpful â if it's above market, explain what might justify it""",
 
     "owner_feedback": """You are a car expert writing one section of a buyer report.
 
-SECTION: "Owner Talk" — What Real Owners Say
+SECTION: "Owner Talk" â What Real Owners Say
 VEHICLE: {vehicle_str}
 
 TASK: Summarize what real owners say about this car based ONLY on the web research data below.
@@ -1208,9 +1218,9 @@ TASK: Summarize what real owners say about this car based ONLY on the web resear
 
 OUTPUT FORMAT (JSON):
 {{
-  "headline": "<one line from REAL research — cite source if possible>",
+  "headline": "<one line from REAL research â cite source if possible>",
   "what_owners_love": ["<from research data>", "<from research data>"],
-  "what_owners_wish_they_knew": ["<from research data — cite source>"],
+  "what_owners_wish_they_knew": ["<from research data â cite source>"],
   "common_experiences": "<2-3 sentences from real owner perspectives>",
   "reliability_reputation": "<one sentence on reliability reputation>"
 }}
@@ -1220,23 +1230,25 @@ CRITICAL RULES:
 - Cite sources: "Owners on PriusChat report..." or "Reddit users mention..."
 - If the research data is empty or doesn't contain owner experiences, return:
   {{
-    "headline": "Limited owner data found — check Reddit and forums for real experiences",
-    "what_owners_love": ["Research data was limited for this specific model — check r/{make_lower} and model-specific forums"],
+    "headline": "Limited owner data found â check Reddit and forums for real experiences",
+    "what_owners_love": ["Research data was limited for this specific model â check r/{make_lower} and model-specific forums"],
     "what_owners_wish_they_knew": ["No specific owner insights found in research"],
     "common_experiences": "Limited owner-specific feedback available in our research. For real owner experiences, check Reddit r/{make_lower}, model-specific forums, and long-term review videos on YouTube.",
     "reliability_reputation": "Check Consumer Reports and J.D. Power for official reliability ratings for the {year} {make} {model}."
   }}
-- BANNED: "Some owners wish they knew about regular maintenance" — that's generic filler
-- BANNED: "It's important to stay up to date on recalls" — obvious and unhelpful  
+- BANNED: "Some owners wish they knew about regular maintenance" â that's generic filler
+- BANNED: "It's important to stay up to date on recalls" â obvious and unhelpful  
 - Every bullet MUST come from the research data or honestly say "not found"
 - NO FABRICATED OWNER SENTIMENT""",
 
     "dealer_questions": """You are a car buying expert writing one section of a buyer report.
 
-SECTION: "Go Prepared" — Smart Questions for the Dealer
+SECTION: "Go Prepared" â Smart Questions for the Dealer
 VEHICLE: {vehicle_str}
+MILEAGE: {mileage}
+PRICE: {price}
 
-TASK: Generate 5-7 smart, specific questions a buyer should ask about THIS car. 
+TASK: Generate 5-7 smart, specific questions a buyer should ask about THIS specific car.
 Use the vehicle data, NHTSA data, and research to craft questions that show homework.
 
 {data_context}
@@ -1245,7 +1257,7 @@ OUTPUT FORMAT (JSON):
 {{
   "questions": [
     {{
-      "ask": "<the exact question — specific to THIS car>",
+      "ask": "<the exact question â specific to THIS car>",
       "why_it_matters": "<what the answer tells you>",
       "good_answer": "<what you want to hear>"
     }}
@@ -1253,12 +1265,20 @@ OUTPUT FORMAT (JSON):
   "bonus_tip": "<one insider tip about buying THIS type of car>"
 }}
 
+CRITICAL MILEAGE RULE:
+This car has {mileage}. ALL questions MUST be appropriate for that mileage.
+- Under 1,000 miles = essentially NEW. Ask about warranty coverage, break-in period, dealer incentives, why it's still on the lot. Do NOT ask about timing belts, transmission flushes, brake wear, or any high-mileage maintenance.
+- 1,000-30,000 miles = low mileage. Ask about remaining factory warranty, first-owner history, any open recalls.
+- 30,000-100,000 miles = moderate. Ask about major service milestones completed (30k/60k/90k service).
+- Over 100,000 miles = high mileage. Ask about timing belt/chain service, transmission service, major repairs done.
+
 RULES:
-- Questions MUST reference this specific year/make/model
-- If NHTSA recalls exist, include a question about whether they've been addressed
-- If mileage is high, include a question about relevant service milestones
-- BANNED: "Can I see the Carfax?" — too generic
-- BANNED: "Has this car been in any accidents?" — too generic
+- Questions MUST reference this specific {year} {make} {model}
+- Questions MUST match the ACTUAL mileage of {mileage} â do NOT generate questions for a different mileage
+- If NHTSA recalls exist in the data, include a question about whether they've been addressed
+- BANNED: "Can I see the Carfax?" â too generic
+- BANNED: "Has this car been in any accidents?" â too generic
+- BANNED: Any question about high-mileage maintenance on a car with under 10,000 miles
 - Each question should show the buyer did their homework"""
 }
 
@@ -1275,6 +1295,11 @@ def generate_section(section_name, vehicle_info, data_context_str):
         log.error(f"No prompt template for section: {section_name}")
         return None
 
+    mileage_val = v.get('mileage', 0)
+    mileage_str = f"{mileage_val:,} miles" if isinstance(mileage_val, (int, float)) and mileage_val else "unknown"
+    price_val = v.get('price', 0)
+    price_str = f"${price_val:,}" if isinstance(price_val, (int, float)) and price_val else "unknown"
+
     prompt = prompt_template.format(
         vehicle_str=vehicle_str,
         data_context=data_context_str,
@@ -1282,13 +1307,15 @@ def generate_section(section_name, vehicle_info, data_context_str):
         make=v.get('make', '?'),
         model=v.get('model', '?'),
         make_lower=str(v.get('make', '')).lower(),
+        mileage=mileage_str,
+        price=price_str,
     )
 
     try:
         resp = requests.post(GROQ_URL, json={
             "model": GROQ_MODEL,
             "messages": [
-                {"role": "system", "content": "You are a car buying expert. Return ONLY valid JSON matching the requested schema. No markdown, no explanation — just the JSON object."},
+                {"role": "system", "content": "You are a car buying expert. Return ONLY valid JSON matching the requested schema. No markdown, no explanation â just the JSON object."},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.15,
@@ -1390,10 +1417,10 @@ def generate_analysis_pipeline(vehicle_info, market_data, nhtsa_data, dealer_rep
     # PHASE 2: Build section-specific data contexts
     # =====================================================
 
-    # Section 1: Model Year Summary — gets model year research + basic identity
-    s1_context = f"{identity}\n\nWEB RESEARCH — Model Year Info:\n{model_year_research or 'No web research data available for this model year.'}"
+    # Section 1: Model Year Summary â gets model year research + basic identity
+    s1_context = f"{identity}\n\nWEB RESEARCH â Model Year Info:\n{model_year_research or 'No web research data available for this model year.'}"
 
-    # Section 2: Vehicle History — gets NHTSA data ONLY (no web research to hallucinate from)
+    # Section 2: Vehicle History â gets NHTSA data ONLY (no web research to hallucinate from)
     s2_parts = [identity]
     if nhtsa_data:
         n = nhtsa_data
@@ -1416,7 +1443,7 @@ def generate_analysis_pipeline(vehicle_info, market_data, nhtsa_data, dealer_rep
         s2_parts.append("\nNo NHTSA data available.")
     s2_context = "\n".join(s2_parts)
 
-    # Section 3: Price Analysis — gets market data ONLY
+    # Section 3: Price Analysis â gets market data ONLY
     s3_parts = [identity]
     if market_data:
         m = market_data
@@ -1445,10 +1472,10 @@ def generate_analysis_pipeline(vehicle_info, market_data, nhtsa_data, dealer_rep
         s3_parts.append(f"  This car's mileage: {v['mileage']:,}" if isinstance(v['mileage'], (int, float)) else f"  This car's mileage: {v['mileage']}")
     s3_context = "\n".join(s3_parts)
 
-    # Section 4: Owner Feedback — gets ONLY owner research (the gatekeeper)
-    s4_context = f"{identity}\n\nWEB RESEARCH — Owner Feedback (use ONLY this data):\n{owner_research or 'NO OWNER RESEARCH DATA AVAILABLE. You must return the limited-data fallback response.'}"
+    # Section 4: Owner Feedback â gets ONLY owner research (the gatekeeper)
+    s4_context = f"{identity}\n\nWEB RESEARCH â Owner Feedback (use ONLY this data):\n{owner_research or 'NO OWNER RESEARCH DATA AVAILABLE. You must return the limited-data fallback response.'}"
 
-    # Section 5: Dealer Questions — gets ALL data for smart synthesis
+    # Section 5: Dealer Questions â gets ALL data for smart synthesis
     s5_parts = [identity]
     if nhtsa_data and nhtsa_data.get("recall_count", 0) > 0:
         s5_parts.append(f"\nRECALLS: {nhtsa_data['recall_count']} recalls for this model year")
@@ -1459,7 +1486,7 @@ def generate_analysis_pipeline(vehicle_info, market_data, nhtsa_data, dealer_rep
     if v.get('mileage'):
         s5_parts.append(f"MILEAGE: {v['mileage']:,} miles" if isinstance(v['mileage'], (int, float)) else f"MILEAGE: {v['mileage']}")
     if dealer_research:
-        s5_parts.append(f"\nWEB RESEARCH — Known issues & buying tips:\n{dealer_research}")
+        s5_parts.append(f"\nWEB RESEARCH â Known issues & buying tips:\n{dealer_research}")
     s5_context = "\n".join(s5_parts)
 
     # =====================================================
@@ -1515,7 +1542,7 @@ def generate_analysis_pipeline(vehicle_info, market_data, nhtsa_data, dealer_rep
 
 
 # ==============================================================
-# ORCHESTRATOR ÃÂ¢ÃÂÃÂ now with VIN decode + web research
+# ORCHESTRATOR ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ now with VIN decode + web research
 # ==============================================================
 
 def analyze_listing(input_data):
@@ -1748,7 +1775,7 @@ def health():
 
 
 # ==============================================================
-# SELF-IMPROVING AGENT — REWARD + EVENT ENDPOINTS
+# SELF-IMPROVING AGENT â REWARD + EVENT ENDPOINTS
 # ==============================================================
 
 @app.route("/api/reward", methods=["POST"])
