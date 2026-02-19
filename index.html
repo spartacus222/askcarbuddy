@@ -272,32 +272,32 @@ h4.section-head{color:var(--green);font-size:0.85rem;margin:18px 0 8px;text-tran
   <div class="feature-grid">
     <div class="feature-card">
       <div class="feature-icon fi-green">📊</div>
-      <h3>Deal Score</h3>
+      <h3>Know Your Score</h3>
       <p>Instant market comparison against real listings nearby. Know if you're overpaying before you walk in.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon fi-red">🛡️</div>
-      <h3>Risk Assessment</h3>
+      <h3>Vehicle History</h3>
       <p>NHTSA recalls, complaint data, and severity analysis — all contextualized for this exact car.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon fi-blue">🔍</div>
-      <h3>Known Quirks</h3>
+      <h3>Market Price</h3>
       <p>Real documented issues for this generation & engine. Not generic "check the tires" advice.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon fi-purple">💬</div>
-      <h3>Smart Questions</h3>
+      <h3>Owner Reviews</h3>
       <p>Insider questions to ask the dealer that reveal what you can't find online. With red/green flag answers.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon fi-amber">🔧</div>
-      <h3>Maintenance Intel</h3>
+      <h3>Smart Questions</h3>
       <p>Exactly what's due at this mileage, what it costs for this car, and what to budget for year one.</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon fi-cyan">💰</div>
-      <h3>True Cost to Own</h3>
+      <h3>Go Prepared</h3>
       <p>Fuel, insurance, maintenance, depreciation — your all-in monthly cost with no surprises.</p>
     </div>
   </div>
@@ -415,131 +415,100 @@ function osColor(s){return s>=8?'var(--green)':s>=6?'var(--amber)':s>=4?'#f97316
 function dpColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('great')>=0||l.indexOf('good')>=0)return'var(--green)';if(l.indexOf('fair')>=0)return'var(--amber)';if(l.indexOf('high')>=0||l.indexOf('above')>=0)return'var(--red)';return'var(--text2)'}
 function mrColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('low')>=0)return'var(--green)';if(l.indexOf('moderate')>=0)return'var(--amber)';if(l.indexOf('high')>=0)return'#f97316';return'var(--red)'}
 function mrBg(l){if(!l)return'rgba(255,255,255,0.05)';l=l.toLowerCase();if(l.indexOf('low')>=0)return'rgba(74,222,128,0.15)';if(l.indexOf('moderate')>=0)return'rgba(251,191,36,0.15)';if(l.indexOf('high')>=0)return'rgba(249,115,22,0.15)';return'rgba(239,68,68,0.15)'}
+
+function paColor(v){if(!v)return'var(--text1)';v=v.toLowerCase();if(v.indexOf('great')>-1)return'var(--green)';if(v.indexOf('good')>-1)return'#4ade80';if(v.indexOf('fair')>-1)return'var(--amber)';return'#fb923c';}
+
 function render(d){
 var v=d.vehicle||{},a=d.analysis||{};
-var os=a.overall_score||{},mp=a.market_position||{},ms=a.mechanical_snapshot||{};
-var wm=a.what_makes_it_worth_it||{},ni=a.nhtsa_intel||{},kyc=a.know_your_car||{};
-var bv=a.before_you_visit||{},wd=a.what_to_expect_at_the_dealer||{};
-var ow=a.ownership_reality||{},ac=a.alternatives_context||{};
-var tips=a.insider_tips||[];
-var md=d.market_data||{},nd=d.nhtsa_data||{};
+var os=a.overall_score||{};
+var mys=a.model_year_summary||{};
+var vh=a.vehicle_history||{};
+var pa=a.price_analysis||{};
+var of=a.owner_feedback||{};
+var dq=a.dealer_questions||{};
+var md=d.market_data||{};
+
 var h='<button class="back-btn" onclick="goBack()">\u2190 Back</button>';
+
+// SCORE BANNER
 h+='<div class="score-banner">';
 h+='<div class="vehicle-title">'+(v.year||'')+' '+(v.make||'')+' '+(v.model||'')+' '+(v.trim||'')+'</div>';
 h+='<div class="vehicle-meta">'+(v.price?'$'+v.price.toLocaleString():'')+' \u00B7 '+(v.mileage?v.mileage.toLocaleString()+' mi':'')+' \u00B7 '+(v.color||'')+'</div>';
 h+='<div class="score-big">'+(os.score||'?')+'</div>';
 h+='<div class="score-label">'+(os.label||'')+'</div>';
 h+='<div class="score-liner">'+(os.one_liner||'')+'</div>';
-if(os.confidence_level){h+='<div class="confidence-bar"><div class="conf-track"><div class="conf-fill" style="width:'+os.confidence_level+'%"></div></div><div class="conf-text">Analysis Confidence: '+os.confidence_level+'%'+(os.confidence_reason?' \u2014 '+os.confidence_reason:'')+'</div></div>'}
-h+='</div>';
-h+='<div class="score-trio">';
-h+='<div class="trio-item"><div class="trio-label">Market</div><div class="trio-val" style="color:'+dpColor(mp.label)+'">'+(mp.label||'\u2014')+'</div><div class="trio-sub">'+(mp.vs_market_pct||'')+'</div></div>';
-h+='<div class="trio-item trio-main"><div class="trio-label">Buy Score</div><div class="trio-val" style="color:'+osColor(os.score)+'">'+(os.score||'?')+'/10</div><div class="trio-sub">'+(os.label||'')+'</div></div>';
-h+='<div class="trio-item"><div class="trio-label">Mech.</div><div class="trio-val" style="color:'+mrColor(ms.risk_level)+'">'+(ms.risk_level||'\u2014')+'</div><div class="trio-sub">'+(ms.things_to_love?ms.things_to_love.substring(0,50)+'...':'')+'</div></div>';
 h+='</div>';
 
-// SECTION 1: What Makes It Worth It
-if(wm.headline||wm.strengths){h+='<div class="card"><div class="card-title"><span class="icon">\u2B50</span>What Makes This Car Worth It</div>';
-if(wm.headline){h+='<div class="big-ticket" style="margin-bottom:16px;border-left-color:var(--green)">'+wm.headline+'</div>'}
-if(wm.strengths&&wm.strengths.length){wm.strengths.forEach(function(s){h+='<div class="flag-good">\u2713 '+s+'</div>'})}
-if(wm.this_one_specifically){h+='<div style="margin-top:12px;padding:12px;background:rgba(74,222,128,0.08);border-radius:8px;font-size:14px"><strong>This listing specifically:</strong> '+wm.this_one_specifically+'</div>'}
+// QUICK STATS ROW
+h+='<div class="score-trio">';
+h+='<div class="trio-item"><div class="trio-label">Price</div><div class="trio-val" style="color:'+paColor(pa.verdict)+'">'+(pa.verdict||'\u2014')+'</div><div class="trio-sub">'+(pa.vs_market||'')+'</div></div>';
+h+='<div class="trio-item trio-main"><div class="trio-label">Buy Score</div><div class="trio-val" style="color:'+osColor(os.score)+'">'+(os.score||'?')+'/10</div><div class="trio-sub">'+(os.label||'')+'</div></div>';
+h+='<div class="trio-item"><div class="trio-label">Recalls</div><div class="trio-val">'+(vh.recalls_for_model_year!=null?vh.recalls_for_model_year:'?')+'</div><div class="trio-sub">for model year</div></div>';
+h+='</div>';
+
+// SECTION 1: Know Your Car
+if(mys.headline||mys.highlights){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDE97</span>Know Your Car</div>';
+if(mys.headline){h+='<div class="big-ticket" style="margin-bottom:16px;border-left-color:var(--accent)">'+mys.headline+'</div>'}
+if(mys.generation){h+='<div style="margin-bottom:12px;padding:8px 12px;background:rgba(0,212,255,0.06);border-radius:8px;font-size:13px;color:var(--text2)"><strong>Generation:</strong> '+mys.generation+'</div>'}
+if(mys.what_changed_this_year){h+='<p class="sub-text" style="margin-bottom:12px">'+mys.what_changed_this_year+'</p>'}
+if(mys.highlights&&mys.highlights.length){h+='<h4 class="section-head">Highlights</h4>';mys.highlights.forEach(function(s){h+='<div class="flag-good">\u2713 '+s+'</div>'})}
+if(mys.engine_and_drivetrain){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(0,212,255,0.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">Powertrain</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+mys.engine_and_drivetrain+'</div></div>'}
+if(mys.fun_fact){h+='<div style="margin-top:10px;padding:10px 14px;background:rgba(251,191,36,0.06);border-left:3px solid var(--amber);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--amber);margin-bottom:6px">\uD83D\uDCA1 Fun Fact</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+mys.fun_fact+'</div></div>'}
 h+='</div>'}
 
-// SECTION 2: Market Position — Local 50-Mile Snapshot
-if(mp.vs_market_pct||mp.label){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCCA</span>Market Position <span style="font-size:12px;color:var(--text2);font-weight:400">within 50 miles</span></div>';
-h+='<div class="deal-header"><div class="deal-label-big" style="color:'+dpColor(mp.label)+'">'+(mp.label||'')+'</div><div class="deal-pct">'+(mp.vs_market_pct||'')+'</div></div>';
-if(mp.local_snapshot){h+='<p class="sub-text">'+mp.local_snapshot+'</p>'}
-if(mp.fair_range){h+='<div class="deal-target"><span class="dt-label">Local Fair Range:</span> <span class="dt-val">'+mp.fair_range+'</span></div>'}
+// SECTION 2: The History
+if(vh.headline||vh.recalls_for_model_year!=null){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCC4</span>The History</div>';
+if(vh.headline){h+='<div class="big-ticket" style="margin-bottom:16px;border-left-color:var(--green)">'+vh.headline+'</div>'}
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">';
+h+='<div style="background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--text1)">'+(vh.recalls_for_model_year!=null?vh.recalls_for_model_year:'?')+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase">Recalls</div></div>';
+h+='<div style="background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--text1)">'+(vh.complaints_for_model_year!=null?vh.complaints_for_model_year:'?')+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase">Complaints</div></div></div>';
+if(vh.recall_details&&vh.recall_details.length>0){vh.recall_details.forEach(function(r){h+='<div style="padding:8px;background:rgba(249,115,22,0.08);border-left:2px solid #f97316;margin-bottom:6px;font-size:13px">'+r+'</div>'})}
+if(vh.common_complaint_areas){h+='<div style="margin-top:8px;font-size:13px;color:var(--text2)"><strong>Common areas:</strong> '+vh.common_complaint_areas+'</div>'}
+if(vh.carfax_tip){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(74,222,128,0.06);border-left:3px solid var(--green);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--green);margin-bottom:6px">\uD83D\uDCCB Carfax Tip</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+vh.carfax_tip+'</div></div>'}
+if(vh.nhtsa_source){h+='<div style="margin-top:12px;padding:8px;background:rgba(0,212,255,0.04);border-radius:4px;font-size:11px;color:var(--text3);border-left:2px solid var(--accent)">'+vh.nhtsa_source+'</div>'}
+h+='</div>'}
+
+// SECTION 3: The Price
+if(pa.verdict||pa.vs_market){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCB2</span>The Price <span style="font-size:12px;color:var(--text2);font-weight:400">within 50 miles</span></div>';
+h+='<div class="deal-header"><div class="deal-label-big" style="color:'+paColor(pa.verdict)+'">'+(pa.verdict||'')+'</div><div class="deal-pct">'+(pa.vs_market||'')+'</div></div>';
+if(pa.comp_count){h+='<div style="margin:8px 0;font-size:13px;color:var(--text2)">Based on <strong>'+pa.comp_count+'</strong> comparable listings</div>'}
+if(pa.price_range){h+='<div class="deal-target"><span class="dt-label">Market Range:</span> <span class="dt-val">'+pa.price_range+'</span></div>'}
+if(pa.fair_range){h+='<div class="deal-target" style="margin-top:6px"><span class="dt-label">Fair Range:</span> <span class="dt-val">'+pa.fair_range+'</span></div>'}
 if(md&&md.price_buckets&&md.price_buckets.length){h+='<div class="chart-container">';
 var mx=Math.max.apply(null,md.price_buckets.map(function(b){return b.count}));
 md.price_buckets.forEach(function(b){var pct=(b.count/mx)*100;var act=v.price>=b.min&&v.price<b.max;
 h+='<div class="chart-bar'+(act?' active':'')+'" style="height:'+Math.max(4,pct)+'%" title="$'+b.min.toLocaleString()+'-$'+b.max.toLocaleString()+': '+b.count+' cars"></div>'});
 h+='</div><div class="chart-labels"><span>$'+(md.min_price?md.min_price.toLocaleString():'?')+'</span><span>$'+(md.max_price?md.max_price.toLocaleString():'?')+'</span></div>'}
-if(mp.price_context){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(0,212,255,0.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">Why This Price</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+mp.price_context+'</div></div>'}
-if(mp.supply_demand){h+='<div style="margin-top:10px;padding:10px 14px;background:rgba(251,191,36,0.06);border-left:3px solid var(--amber);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--amber);margin-bottom:6px">Local Supply</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+mp.supply_demand+'</div></div>'}
+if(pa.context){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(0,212,255,0.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">Price Context</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+pa.context+'</div></div>'}
+if(pa.bottom_line){h+='<div style="margin-top:10px;padding:10px 14px;background:rgba(74,222,128,0.08);border-radius:8px;font-size:14px;font-weight:500;color:var(--text1)">\uD83D\uDCAC '+pa.bottom_line+'</div>'}
 h+='</div>'}
 
-// SECTION 3: Mechanical Snapshot (replaces Mechanical Risk)
-if(ms.risk_level){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDEE1\uFE0F</span>Mechanical Snapshot</div>';
-h+='<div class="risk-header"><span class="risk-badge" style="background:'+mrBg(ms.risk_level)+';color:'+mrColor(ms.risk_level)+'">'+ms.risk_level+'</span></div>';
-if(ms.outlook){h+='<p class="sub-text">'+ms.outlook+'</p>'}
-if(ms.things_to_love){h+='<div class="flag-good" style="margin-top:8px">\u2713 '+ms.things_to_love+'</div>'}
+// SECTION 4: Owner Talk
+if(of.headline||of.what_owners_love){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDDE3\uFE0F</span>What Owners Say</div>';
+if(of.headline){h+='<div class="big-ticket" style="margin-bottom:16px;border-left-color:var(--accent)">'+of.headline+'</div>'}
+if(of.what_owners_love&&of.what_owners_love.length){h+='<h4 class="section-head">What They Love</h4>';of.what_owners_love.forEach(function(s){h+='<div class="flag-good">\u2764\uFE0F '+s+'</div>'})}
+if(of.what_owners_wish_they_knew&&of.what_owners_wish_they_knew.length){h+='<h4 class="section-head">What They Wish They Knew</h4>';of.what_owners_wish_they_knew.forEach(function(s){h+='<div style="padding:8px 12px;background:rgba(251,191,36,0.06);border-left:2px solid var(--amber);margin-bottom:6px;font-size:13px">'+s+'</div>'})}
+if(of.common_experiences){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(0,212,255,0.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">Daily Life</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+of.common_experiences+'</div></div>'}
+if(of.reliability_reputation){h+='<div style="margin-top:10px;padding:10px 14px;background:rgba(74,222,128,0.08);border-radius:8px;font-size:14px;color:var(--text1)">\uD83D\uDEE1\uFE0F '+of.reliability_reputation+'</div>'}
 h+='</div>'}
 
-// SECTION 4: NHTSA Intel — Data-Only
-if(ni.unrepaired_recalls!==undefined||ni.total_complaints!==undefined){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCC1</span>NHTSA Safety</div>';
-var recalls=ni.unrepaired_recalls||'?';var comps=ni.total_complaints||'?';
-h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">';
-h+='<div style="background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--text1)">'+recalls+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase">Recalls</div></div>';
-h+='<div style="background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--text1)">'+comps+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase">Complaints</div></div></div>';
-if((ni.recall_details||[]).length>0){h+='<h4 style="margin:12px 0 8px;font-size:13px;font-weight:600;text-transform:uppercase">Recalls</h4>';
-(ni.recall_details||[]).forEach(function(r){h+='<div style="padding:8px;background:rgba(249,115,22,0.08);border-left:2px solid #f97316;margin-bottom:6px;font-size:13px">'+r+'</div>'});}
-if(ni.complaint_summary){h+='<h4 style="margin:12px 0 8px;font-size:13px;font-weight:600;text-transform:uppercase">Complaints</h4><div style="font-size:13px;color:var(--text2)">'+ni.complaint_summary+'</div>'}
-if(ni.data_source){h+='<div style="margin-top:12px;padding:8px;background:rgba(0,212,255,0.04);border-radius:4px;font-size:11px;color:var(--text3);border-left:2px solid var(--accent)">'+ni.data_source+'</div>'}
+// SECTION 5: Go Prepared — Questions for the Dealer
+if(dq.questions&&dq.questions.length){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCAC</span>Go Prepared</div>';
+h+='<h4 class="section-head">Smart Questions to Ask</h4>';
+dq.questions.forEach(function(q,i){h+='<div class="step"><div class="step-n">'+(i+1)+'</div><div><div class="step-q">\"'+(q.ask||'')+'\"</div>';
+h+='<div class="step-why">'+(q.why_it_matters||'')+'</div>';
+h+='<div class="step-sig"><span class="good">\u2713 Good answer: '+(q.good_answer||'')+'</span></div></div></div>'});
+if(dq.bonus_tip){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(251,191,36,0.06);border-left:3px solid var(--amber);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--amber);margin-bottom:6px">\uD83D\uDCA1 Insider Tip</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+dq.bonus_tip+'</div></div>'}
 h+='</div>'}
 
-// SECTION 5: Know Your Car (replaces What to Know)
-if(kyc.generation_overview){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDD0D</span>Know Your Car</div>';
-h+='<p class="sub-text">'+kyc.generation_overview+'</p>';
-if(kyc.known_quirks&&kyc.known_quirks.length){h+='<h4 class="section-head">Known Quirks</h4>';
-kyc.known_quirks.forEach(function(q){h+='<div class="quirk"><div class="quirk-head"><span class="quirk-name">'+(q.item||'')+'</span><span class="sev sev-'+(q.severity||'').replace(/\s/g,'_')+'">'+(q.severity||'')+'</span></div>';
-h+='<div class="quirk-detail">'+(q.reality||'')+'</div><div class="quirk-action">\u2192 '+(q.action||'')+'</div></div>'})}
-if(kyc.big_ticket_item){h+='<h4 class="section-head">Big Ticket Item</h4><div class="big-ticket">'+kyc.big_ticket_item+'</div>'}
-if(kyc.maintenance_coming_up&&kyc.maintenance_coming_up.length){h+='<h4 class="section-head">Maintenance Coming Up</h4>';
-kyc.maintenance_coming_up.forEach(function(m){h+='<div class="maint-row"><div class="maint-info"><div class="maint-svc">'+(m.service||'')+'</div><div class="maint-cost">'+(m.cost||'')+'</div><div class="maint-why">'+(m.why||'')+'</div></div>';
-h+='<span class="urg urg-'+(m.when||'').replace(/\s/g,'_')+'">'+(m.when||'')+'</span></div>'})}
-h+='</div>'}
-
-// SECTION 6: Before You Visit (replaces Game Plan)
-if(bv.smart_questions&&bv.smart_questions.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCAC</span>Before You Visit</div>';
-if(bv.prep_steps&&bv.prep_steps.length){h+='<h4 class="section-head">Prep Steps</h4><ul class="check-list">';
-bv.prep_steps.forEach(function(b){h+='<li>'+b+'</li>'});h+='</ul>'}
-h+='<h4 class="section-head">Questions to Ask</h4>';
-bv.smart_questions.forEach(function(q,i){h+='<div class="step"><div class="step-n">'+(i+1)+'</div><div><div class="step-q">"'+(q.ask||'')+'"</div>';
-h+='<div class="step-why">'+(q.why||'')+'</div>';
-h+='<div class="step-sig"><span class="good">\u2713 '+(q.great_sign||'')+'</span></div>';
-h+='<div class="step-sig"><span class="warn">\u26A0 '+(q.worth_digging||'')+'</span></div></div></div>'});
-if(bv.test_drive_focus&&bv.test_drive_focus.length){h+='<h4 class="section-head">Test Drive Focus</h4><ul class="check-list">';
-bv.test_drive_focus.forEach(function(t){h+='<li>'+t+'</li>'});h+='</ul>'}
-h+='</div>'}
-
-// SECTION 7: What to Expect at the Dealer (clean, no scripts)
-if(wd.estimated_otd||wd.financing_reality){h+='<div class="card"><div class="card-title"><span class="icon">\uD83C\uDFE2</span>What to Expect at the Dealer</div>';
-if(wd.estimated_otd){h+='<div class="otd-box"><div class="otd-price">'+wd.estimated_otd+'</div><div class="otd-lbl">Estimated Out-the-Door</div></div>'}
-if(wd.typical_doc_fee){h+='<div class="desk-row"><span class="desk-label">Typical Doc Fee:</span> '+wd.typical_doc_fee+'</div>'}
-if(wd.fees_to_know_about&&wd.fees_to_know_about.length){h+='<h4 class="section-head">Fees to Know About</h4><ul class="fee-list">';
-wd.fees_to_know_about.forEach(function(f){h+='<li>'+f+'</li>'});h+='</ul>'}
-if(wd.financing_reality){var fc=wd.financing_reality;h+='<h4 class="section-head">Financing by Credit Tier</h4><div class="credit-grid">';
-if(fc.excellent_720_plus){h+='<div class="credit-item credit-excellent"><div class="credit-tier">720+</div><div class="credit-apr">'+fc.excellent_720_plus+'</div></div>'}
-if(fc.good_660_720){h+='<div class="credit-item credit-good"><div class="credit-tier">660-720</div><div class="credit-apr">'+fc.good_660_720+'</div></div>'}
-if(fc.fair_below_660){h+='<div class="credit-item credit-fair"><div class="credit-tier">&lt;660</div><div class="credit-apr">'+fc.fair_below_660+'</div></div>'}
-h+='</div>'}
-h+='</div>'}
-
-// SECTION 8: Ownership Reality
-if(ow.monthly_cost_estimate||ow.breakdown){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCB0</span>Ownership Reality</div>';
-if(ow.monthly_cost_estimate){h+='<div class="otd-box"><div class="otd-price">'+ow.monthly_cost_estimate+'</div><div class="otd-lbl">All-In Monthly Cost</div></div>'}
-if(ow.breakdown){var br=ow.breakdown;h+='<div class="cost-grid">';
-if(br.fuel){h+='<div class="cost-item"><div class="cost-val">'+br.fuel+'</div><div class="cost-lbl">Fuel</div></div>'}
-if(br.insurance){h+='<div class="cost-item"><div class="cost-val">'+br.insurance+'</div><div class="cost-lbl">Insurance</div></div>'}
-if(br.maintenance){h+='<div class="cost-item"><div class="cost-val">'+br.maintenance+'</div><div class="cost-lbl">Maintenance</div></div>'}
-if(br.depreciation){h+='<div class="cost-item"><div class="cost-val">'+br.depreciation+'</div><div class="cost-lbl">Depreciation</div></div>'}
-h+='</div>'}
-if(ow.year_one_maintenance){h+='<p class="sub-text">'+ow.year_one_maintenance+'</p>'}
-if(ow.value_retention){h+='<p class="sub-text">'+ow.value_retention+'</p>'}
-h+='</div>'}
-
-// SECTION 9: Alternatives Context (replaces Walk Away - positive framing)
-if(ac.market_supply||ac.worth_considering){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDD0E</span>Market Context</div>';
-if(ac.market_supply){h+='<p class="sub-text">'+ac.market_supply+'</p>'}
-if(ac.worth_considering){h+='<p class="sub-text" style="margin-top:8px">'+ac.worth_considering+'</p>'}
-h+='</div>'}
-
-// SECTION 10: Insider Tips
-if(tips&&tips.length){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCA1</span>Insider Tips</div>';
-tips.forEach(function(t){h+='<div class="tip">'+t+'</div>'});h+='</div>'}
 return h;
 }
+
 </script>
 
 <script>

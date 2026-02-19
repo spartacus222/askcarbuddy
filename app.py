@@ -743,228 +743,132 @@ def research_vehicle_web(year, make, model, trim=None):
 # we build a VEHICLE IDENTITY CARD that the model must reference in every answer.
 # Then we use a two-pass approach: research context first, then generate.
 
-ANALYSIS_SYSTEM_PROMPT = """You are AskCarBuddy -- an AI car buying intelligence engine built by someone with 20 years of dealership experience.
 
-YOUR JOB: The buyer found a car they WANT. Your job is to make them feel CONFIDENT about their purchase. Give them the real data, the ownership reality, and the specific knowledge that makes them the smartest person at the dealership. You are their well-informed friend, not their lawyer.
+ANALYSIS_SYSTEM_PROMPT = """You are AskCarBuddy — an AI car buying assistant built by someone with 20 years of dealership experience.
 
-TONE: Positive but realistic. Think "enthusiast friend who did the research" not "consumer advocacy robot." You LIKE cars. You want them to enjoy this purchase. But you also want them to go in with eyes open.
+YOUR JOB: The buyer found a car they WANT. Help them walk in confident and informed. You are their knowledgeable friend who did the research for them.
 
-====================================================================
-ABSOLUTE RULE #0 -- NO FAKE DATA -- OVERRIDES EVERYTHING ELSE
-====================================================================
-
-DO NOT FABRICATE DATA. EVER. If the provided context does not contain a specific number, stat, date, recall ID, complaint count, days-on-lot, demand ranking, or any other factual claim -- DO NOT INVENT IT.
-
-- If you don't have market comp data: say "Market data unavailable" or omit the field
-- If you don't have NHTSA recall/complaint data: say "No NHTSA data available for this check" -- DO NOT invent recall IDs or complaint counts
-- If you don't have days-on-lot: DO NOT mention it
-- If you don't have local demand stats: DO NOT claim "top-25% demand" or similar
-- If you don't have exact repair costs: give general knowledge ranges but LABEL THEM as "typical range"
-- If you don't have insurance/depreciation data: label estimates as "rough estimate"
-
-You MUST distinguish between:
-  DATA I WAS GIVEN (from the context below): cite confidently
-  GENERAL AUTOMOTIVE KNOWLEDGE (widely documented): label as "generally" or "typically"  
-  SPECIFIC STATS I AM MAKING UP: BANNED. NEVER DO THIS.
+TONE: Warm, positive, informative. Think "car-savvy friend texting you what they found" — not a legal document or consumer report. You LIKE cars. You want them to enjoy this purchase.
 
 ====================================================================
-CRITICAL NEW RULE: FORCE CAR-SPECIFIC ANALYSIS
+ABSOLUTE RULE #0 — NO FAKE DATA — OVERRIDES EVERYTHING
 ====================================================================
 
-EVERY OUTPUT MUST BE ABOUT THIS SPECIFIC CAR, NOT CARS IN GENERAL.
+DO NOT FABRICATE DATA. If the provided context does not contain a specific number, stat, date, recall ID, complaint count — DO NOT INVENT IT.
 
-When writing "market_position" → supply_demand field:
-  ❌ BANNED: "The demand for hybrid vehicles is relatively high"
-  ✅ CORRECT: "Only 2 comparable 2017 Priuses in your 50-mile market. Demand is tight for this generation. That $1,290 premium exists because clean-title low-mile examples move fast."
-
-When writing "known_quirks":
-  ❌ BANNED: "Check the hybrid battery" (everyone knows this)
-  ✅ CORRECT: "2017 Prius 4th-gen battery degradation is documented in owner forums above 120K miles. At 150K, verify battery health via Toyota dealer. Expect $800-$1200 reconditioning cost if needed."
-
-When writing "test_drive_focus":
-  ❌ BANNED: "Pay attention to unusual noises"
-  ✅ CORRECT: "Listen for hesitation during hybrid-to-gas transition (common at 2000-3000 RPM on 2017s). Test EV mode in traffic—should hold electric power for 3-5 seconds. Check brake feel—hybrid Priuses have different modulation than gas cars."
-
-When writing "smart_questions":
-  ❌ BANNED: "Can you provide maintenance records?"
-  ✅ CORRECT: "Has the hybrid battery ever been serviced or replaced? At 150K miles, if original, what's the dealer's assessment of its remaining life? Can you show me the battery health readout from your scan tool?"
-
-THE RULE: If you can Google it in 5 seconds, don't include it. Include only what a BUYER can't learn without your expert knowledge of THIS specific year/make/model.
+- Data from context below: cite confidently
+- General automotive knowledge: label as "generally" or "typically"
+- Specific stats you're making up: BANNED. NEVER DO THIS.
 
 ====================================================================
-PHILOSOPHY -- READ THIS CAREFULLY
+RULE #1 — THIS CAR ONLY
 ====================================================================
 
-1. BUYER IS YOUR FRIEND: They already like this car. Don't talk them out of it. Help them own it smart.
+EVERY sentence must be about THIS specific car — the {year} {make} {model}. 
+If you catch yourself writing generic advice that applies to all cars, DELETE IT.
 
-2. POSITIVE FRAMING: Instead of "This car is overpriced" say "Here's what you're getting for your money and where this sits in the market." Instead of "Red flag" say "Worth verifying before you commit."
-
-3. NO ROOKIE NEGOTIATION ADVICE: Do NOT include scripts like "If we can align closer to $X..." or "I'd like to review documentation fees." That's embarrassing. The buyer is an adult. Give them DATA (market position, what similar cars sell for, what fees are typical) and let them handle the conversation their own way.
-
-4. REAL OWNERSHIP INTELLIGENCE: What does it ACTUALLY cost to own this car? Maintenance schedule at THIS mileage, insurance reality, fuel costs, depreciation curve. This is the stuff people need.
-
-5. MODEL-SPECIFIC KNOWLEDGE: Everything must be specific to THIS generation, THIS engine, THIS drivetrain. No generic car-buying advice. If you can't say something specific to this exact car, don't say it.
-
-6. ENTHUSIASM IS OK: If a car is genuinely great, say so. "This 2017 Prius is a solid value—clean hybrid powertrain, proven battery design, holds resale better than equivalent gas cars" is fine. Be real.
+❌ BANNED phrases: "It's important to...", "In general...", "Make sure to always...", "Vehicles like this..."
+✅ REQUIRED: Name this car, its generation, its engine, or its specific components in every paragraph.
 
 ====================================================================
-MARKET POSITION: The AI's biggest weakness right now
+THE 5 SECTIONS — WHAT EACH ONE DOES
 ====================================================================
 
-The "market_position" section must sound like a BUYER EXPERT analyzing a specific deal, not a template.
+SECTION 1: "Know Your Car" (model_year_summary)
+Help the buyer understand what they're looking at. What generation is this? What changed this year? What's the engine/drivetrain story? What are the highlights that make this model year special? Think of it as the "Wikipedia summary meets enthusiast review" — condensed into something useful. If you have web research data, USE IT to provide real generation-specific info.
 
-When filling "supply_demand":
-- Look at the comp_count in the MARKET DATA context
-- If comps are rare (< 5): "This is a SCARCE vehicle locally. You won't find many like this. Price reflects low supply."
-- If comps are moderate (5-15): "Good supply. This model has several options in the market. Price should be competitive."
-- If comps are plentiful (>15): "Lots of options. This generation is still common. Any premium pricing needs to justify itself."
-- ALWAYS mention the actual comp_count and what that means for THIS car
+SECTION 2: "The History" (vehicle_history)
+Use any available data: NHTSA recalls for this model year, complaint data, known TSBs. Frame recalls as "these exist for the model year — check if this VIN is affected at nhtsa.gov/recalls." Mention Carfax as something the buyer should ask for. This section should make the buyer feel informed, not scared.
 
-When filling "local_snapshot":
-- Name the exact comp_count, median price, and where THIS car sits
-- Explain WHY the price is where it is for THIS car (mileage, trim, color, condition, generation)
-- Example: "7 comparable 2017 Priuses in 50 miles. Median is $12,400. This one at $13,435 is 8% above median—justified by lower mileage (150K vs median 165K) and nav package."
+SECTION 3: "The Price" (price_analysis)
+Use the market comparison data provided. How many comparable cars exist within 50 miles? Where does THIS car sit vs the median? Is it a good deal, fair deal, or slightly high? CITE THE ACTUAL NUMBERS. If this car is above median, explain WHY (lower miles, better trim, etc.). If below, say what a win that is. Give them a fair price range based on actual local comps.
 
-When filling "price_context":
-- What specifically about THIS car drives the price?
-- "Low-mile examples of this generation hold premium because battery confidence is higher"
-- "Navigation package is worth $800-$1200 in this market"
-- "Third-gen color (metallic silver) is in high demand locally"
+SECTION 4: "Owner Talk" (owner_feedback)
+What do real owners of this generation say? Pull from web research data. What do people love about it? What do they wish they knew before buying? Any common complaints that are worth knowing? Keep it real and balanced — this isn't a scare section, it's "here's what actual owners experience day-to-day."
 
-The GOAL: A buyer should read market_position and think "I understand exactly why this is priced here and whether I'm getting a deal."
+SECTION 5: "Go Prepared" (dealer_questions)
+Give them 5-7 smart, specific questions to ask the dealer about THIS car. Not generic "can I see the Carfax" stuff. Questions that show they did their homework and will get them useful information. For each question, explain what the answer tells them.
 
 ====================================================================
-INSIDER TIPS: Real knowledge only
+QUALITY RULES
 ====================================================================
 
-When writing "insider_tips", include ONLY knowledge that:
-1. Is specific to this generation/engine/drivetrain
-2. Would cost the buyer $$ to learn on their own
-3. Changes their buying decision or negotiation
-
-Example for 2017 Prius:
-✅ "2017 Prius battery comes with 8-year/100k-mile warranty from Toyota. This one has 150K miles but if battery is original, warranty transferred when you bought—get it in writing."
-✅ "4th-gen Prius CVT is proven reliable. Common failure mode is NOT the transmission—it's the low-mile example that then sits unused. At 150K with regular use, you're actually in the sweet spot for reliability."
-❌ "The Prius is a good fuel-efficient choice" (worthless)
-❌ "Check tire tread depth" (obvious)
-
-====================================================================
-NO GENERIC OUTPUT FIELDS
-====================================================================
-
-Every field in the JSON must reference this specific car, year, generation, engine, or drivetrain.
-
-If you find yourself writing generic text like:
-- "It's important to..."
-- "Vehicles like this..."
-- "Make sure to always..."
-- "In general, you should..."
-
-STOP. Rewrite to be SPECIFIC to the 2017 Prius (or whatever car).
+1. If you can Google it in 5 seconds, don't include it
+2. Every question must be specific to this year/make/model
+3. No scare tactics — this is about helping them buy smart, not scaring them away
+4. Cite actual numbers from the data provided — don't round or approximate when you have exact figures
+5. Keep it concise — buyers want quick intel, not essays
 """
+
 
 
 # ==============================================================
 # AI ANALYSIS SCHEMA
 # ==============================================================
 
+
 ANALYSIS_JSON_SCHEMA = """{
   "overall_score": {
-    "score": <0.0-10.0 with one decimal -- this is a BUYING CONFIDENCE score>,
-    "label": "<Strong Buy|Buy|Lean Buy|Neutral|Lean Pass|Pass>",
-    "one_liner": "<decisive, enthusiastic-but-honest verdict naming the car -- e.g., 'Solid 4Runner at fair market value with Toyota's bulletproof 4.0L and low miles -- this one checks the boxes'>",
-    "confidence_level": <50-99 integer>,
-    "confidence_reason": "<why -- reference actual data availability>"
+    "score": <0.0-10.0 with one decimal — buying confidence score>,
+    "label": "<Strong Buy|Buy|Lean Buy|Neutral|Lean Pass>",
+    "one_liner": "<one decisive sentence naming the car — e.g., 'Clean 2017 Prius with solid service history at a fair local price — smart buy for a commuter'>"
   },
-  "what_makes_it_worth_it": {
-    "headline": "<one punchy line about why this specific car is appealing -- e.g., 'The 5th-gen 4Runner Limited with the KDSS system is the sweet spot between trail-capable and daily-comfortable'>",
-    "strengths": [
-      "<specific strength of THIS car/generation/engine -- be enthusiastic and specific>",
-      "<another genuine strength -- e.g., 'The 4.0L 1GR-FE V6 routinely hits 300K+ miles with basic maintenance'>",
-      "<resale/value angle -- e.g., '4Runners depreciate slower than almost any non-truck vehicle -- you're buying a car that holds its money'>"
+  "model_year_summary": {
+    "headline": "<one punchy line — e.g., 'The 4th-gen Prius brought a complete redesign with 10% better fuel economy'>",
+    "generation": "<which generation this is — e.g., '4th Generation (2016-2023)'>",
+    "what_changed_this_year": "<what Toyota/Honda/etc changed for this model year vs previous — be specific>",
+    "highlights": [
+      "<specific highlight of this model year — engine, tech, safety, design>",
+      "<another highlight>",
+      "<another highlight>"
     ],
-    "this_one_specifically": "<what's notable about THIS specific listing -- low miles, good color, desirable trim, clean history, etc.>"
+    "engine_and_drivetrain": "<1-2 sentences about the powertrain — what it is, how it performs, reliability reputation>",
+    "fun_fact": "<one interesting thing about this generation that most people don't know>"
   },
-  "market_position": {
-    "vs_market_pct": "<exact percentage vs median -- e.g., '4% below median of 31 comparable listings within 50 miles' or 'Market data unavailable'>",
-    "label": "<Great Price|Good Price|Fair Price|Slightly High|Above Market>",
-    "local_snapshot": "<1-2 sentence LOCAL market context -- e.g., 'There are 31 similar 4Runners within 50 miles right now. At $38,500, this one sits below the $39,200 median -- a competitive spot for a Limited with 44K miles.'>",
-    "comp_count": "<number of comps found, or 'unavailable'>",
-    "fair_range": "<realistic price range based on LOCAL comps within 50 miles -- e.g., '$38,000-$41,500'>",
-    "price_context": "<what's driving the price for THIS specific car -- e.g., 'Low mileage on a Limited trim pushes value up. Color (white/black) is in high demand locally. This price reflects that premium but stays competitive.'>",
-    "supply_demand": "<how easy is this car to find locally -- e.g., 'Only 8 of the 31 comps are under 50K miles. Low-mile examples move quickly in this market.' or 'Market data unavailable'>"
+  "vehicle_history": {
+    "headline": "<one line summary — e.g., 'Clean model year with 2 recalls on record — both are free dealer fixes'>",
+    "recalls_for_model_year": <integer count from NHTSA data>,
+    "recall_details": ["<if recalls exist: brief description of each — what it is + that it's a free fix>"],
+    "complaints_for_model_year": <integer count from NHTSA data>,
+    "common_complaint_areas": "<if complaints exist: factual summary of top categories>",
+    "carfax_tip": "<specific advice about what to look for on the Carfax for THIS car — e.g., 'For a 2017 Prius at 150K, you want to see consistent hybrid system service intervals. Ask for the Carfax and look for battery health checks after 100K.'>",
+    "nhtsa_source": "<Always: 'NHTSA data for [year] [make] [model] model year — check this specific VIN at nhtsa.gov/recalls'>"
   },
-  "mechanical_snapshot": {
-    "risk_level": "<Low|Low-Moderate|Moderate|Moderate-High|High>",
-    "outlook": "<specific, positive framing -- e.g., 'At 44K miles, the 1GR-FE is barely broken in. All major drivetrain components are well within their expected service life. This is a mechanically young truck.'>",
-    "things_to_love": "<what's mechanically great about this powertrain/platform -- e.g., 'The 4.0L V6 with the 5-speed auto is Toyota's simplest, most proven combo. No turbo, no CVT, no hybrid complexity -- just straightforward reliability.'>"
+  "price_analysis": {
+    "verdict": "<Great Deal|Good Deal|Fair Price|Slightly Above Market>",
+    "vs_market": "<exact comparison — e.g., '$1,290 above the $12,145 median of 6 local comps'>",
+    "comp_count": "<number of comparable listings within 50 miles>",
+    "price_range": "<local price range — e.g., '$9,295 - $14,995'>",
+    "fair_range": "<what you'd expect to pay — e.g., '$11,500 - $13,500'>",
+    "context": "<2-3 sentences explaining WHY this car is priced where it is — trim, mileage, condition vs local comps. Use actual numbers.>",
+    "bottom_line": "<one sentence final take — e.g., 'Slightly above median but justified by lower mileage and nav package. Fair price for what you're getting.'>"
   },
-  "nhtsa_intel": {
-    "unrepaired_recalls": "<exact count from NHTSA API -- e.g., '2' or '0'>",
-    "recall_details": ["<ONLY if recalls exist: exact recall ID and full description from NHTSA API>"],
-    "total_complaints": "<exact count from NHTSA API -- e.g., '14' or '0'>",
-    "complaint_summary": "<ONLY if complaints exist: factual summary of categories -- e.g., 'Stalling (5), Delay (3)'. If none: '0 complaints.'>",
-    "data_source": "<Always: 'NHTSA vPIC API for VIN [VIN]'>""
+  "owner_feedback": {
+    "headline": "<one line — e.g., 'Owners love the 50+ MPG but wish the road noise was better'>",
+    "what_owners_love": [
+      "<specific thing owners rave about — from forums/reviews/web research>",
+      "<another thing>",
+      "<another thing>"
+    ],
+    "what_owners_wish_they_knew": [
+      "<something owners commonly mention they wish they knew before buying>",
+      "<another thing>"
+    ],
+    "common_experiences": "<2-3 sentences about what daily ownership is actually like — from real owner perspectives>",
+    "reliability_reputation": "<one sentence on how this generation is regarded for reliability>"
   },
-  "know_your_car": {
-    "generation_overview": "<2-3 sentences about THIS generation -- enthusiastic but factual>",
-    "known_quirks": [
+  "dealer_questions": {
+    "questions": [
       {
-        "item": "<specific documented quirk for this generation/engine>",
-        "severity": "<minor_quirk|worth_checking|important>",
-        "reality": "<how common, what it costs, how serious it actually is>",
-        "action": "<exactly what to check or do>"
+        "ask": "<the exact question to ask — specific to THIS car>",
+        "why_it_matters": "<what the answer tells you about the car>",
+        "good_answer": "<what you want to hear>"
       }
     ],
-    "big_ticket_item": "<ONE expensive component to be aware of at THIS mileage -- with realistic timeline and cost>",
-    "maintenance_coming_up": [
-      {
-        "service": "<specific service due at this mileage>",
-        "cost": "<cost range for THIS car>",
-        "when": "<due_now|next_3_months|next_6_months|next_year>",
-        "why": "<why this matters for THIS drivetrain>"
-      }
-    ]
-  },
-  "before_you_visit": {
-    "prep_steps": ["<specific prep -- tools, websites, VIN portals for THIS make -- things to look up before going>"],
-    "smart_questions": [
-      {
-        "ask": "<specific insider question to ask -- what to literally say>",
-        "why": "<what the answer tells you>",
-        "great_sign": "<reassuring answer>",
-        "worth_digging": "<answer that means you should ask more>"
-      }
-    ],
-    "test_drive_focus": ["<specific things to pay attention to on THIS car's test drive -- not generic 'listen for noises'>"]
-  },
-  "what_to_expect_at_the_dealer": {
-    "estimated_otd": "<out-the-door estimate including tax, title, doc fee -- e.g., '$42,800-$43,500 OTD'>",
-    "typical_doc_fee": "<typical doc fee for this market -- e.g., '$200-$500 depending on state'>",
-    "fees_to_know_about": ["<common add-on fees and what's typical/fair -- informational, not adversarial>"],
-    "financing_reality": {
-      "excellent_720_plus": "<APR range>",
-      "good_660_720": "<APR range>",
-      "fair_below_660": "<APR range>"
-    }
-  },
-  "ownership_reality": {
-    "monthly_cost_estimate": "<all-in monthly cost of owning this car>",
-    "breakdown": {
-      "fuel": "<calculated from actual MPG -- e.g., '$180/mo at current gas prices'>",
-      "insurance": "<realistic estimate -- e.g., '$140-$180/mo typical for this vehicle class'>",
-      "maintenance": "<based on this car's schedule at this mileage>",
-      "depreciation": "<how this specific model holds value>"
-    },
-    "year_one_maintenance": "<what maintenance is coming in the first year and ballpark cost>",
-    "value_retention": "<specific to this model -- e.g., '4Runners hold value exceptionally. Expect roughly 8-12% depreciation over 3 years vs 25-30% for most SUVs. You're buying something that keeps its money.'>"
-  },
-  "alternatives_context": {
-    "market_supply": "<how easy/hard is it to find comparable vehicles -- e.g., 'These are not easy to find under 50K miles. 31 comps in 50 miles, only 8 under 45K miles.'>",
-    "worth_considering": "<honest context -- e.g., 'If this one feels right, don't overthink it. Low-mile Limiteds move fast.'>"
-  },
-  "insider_tips": ["<genuine insider knowledge about THIS car -- stuff only a veteran car person would know. Strategic, specific, useful.>"]
+    "bonus_tip": "<one insider tip about the buying process for THIS car — e.g., 'Toyota CPO warranty on a Prius covers the hybrid battery for an extra 12 months — ask if this qualifies'>"
+  }
 }"""
+
 
 
 # ==============================================================
@@ -1087,22 +991,22 @@ def generate_analysis(vehicle_info, market_data, nhtsa_data, dealer_rep, listing
 
     context = "\n".join(context_parts)
 
-    user_msg = f"""Generate a complete buyer intelligence brief for this vehicle.
+    user_msg = f"""Generate a buyer intelligence report for this vehicle.
 
-IMPORTANT: 
+RULES:
 - Every answer must name the specific car ({v.get('year', '?')} {v.get('make', '?')} {v.get('model', '?')}) or its specific components
-- Every question must be something a buyer can't find by Googling
-- Every test drive item must test THIS car's known characteristics
-- Use the web research data to identify REAL documented issues for this generation
-- Zero generic advice allowed
-- CRITICAL: Only cite numbers, stats, recall IDs, complaint counts, and market data that appear in the DATA CONTEXT below. If a data section says 0 recalls, report 0 recalls. If no market data was provided, say market data is unavailable. DO NOT INVENT ANY STATISTICS.
-- RECALL RULE: NHTSA recall data is for the MODEL YEAR, not this specific VIN. Do NOT say "this car has a recall" — instead say "X recalls exist for the [year] [make] [model] model year. Recommend checking this specific VIN at nhtsa.gov/recalls." Frame it as general awareness, not a confirmed issue with this car.
-- If NHTSA data shows 0 recalls and 0 complaints, say exactly that — do NOT mention any recall topics in the biggest_question or elsewhere.
+- Use web research data to provide REAL generation-specific information
+- ONLY cite numbers, stats, recall IDs, complaint counts, and market data from the DATA CONTEXT below
+- NHTSA data is for the MODEL YEAR, not this VIN. Frame as "X recalls exist for the [year] [make] [model] model year. Check this VIN at nhtsa.gov/recalls."
+- If NHTSA data shows 0 recalls and 0 complaints, say exactly that
+- No generic advice — everything must be specific to this car
+- Keep it concise and helpful — buyers want quick intel, not essays
 
 {context}
 
 Return the JSON analysis matching this schema:
 {ANALYSIS_JSON_SCHEMA}"""
+
 
     for attempt, max_tok in enumerate([12288, 16384], 1):
         try:
@@ -1332,8 +1236,7 @@ def api_analyze():
             v = report.get("vehicle", {})
             a = report.get("analysis", {})
             os_data = a.get("overall_score", {}) if isinstance(a, dict) else {}
-            dp_data = a.get("market_position", {}) if isinstance(a, dict) else {}
-            mr_data = a.get("mechanical_snapshot", {}) if isinstance(a, dict) else {}
+            pa_data = a.get("price_analysis", {}) if isinstance(a, dict) else {}
             trace_id = save_trace({
                 "url": data.get("url", ""),
                 "year": v.get("year", ""),
@@ -1342,12 +1245,12 @@ def api_analyze():
                 "trim": v.get("trim", ""),
                 "price": v.get("price"),
                 "mileage": v.get("mileage"),
-                "prompt_version": "v7",
+                "prompt_version": "v9",
                 "total_time_ms": total_ms,
                 "overall_score": os_data.get("score") if isinstance(os_data, dict) else None,
-                "deal_position": dp_data.get("label") if isinstance(dp_data, dict) else None,
-                "mechanical_risk": mr_data.get("risk_level") if isinstance(mr_data, dict) else None,
-                "confidence_level": os_data.get("confidence_level") if isinstance(os_data, dict) else None,
+                "deal_position": pa_data.get("verdict") if isinstance(pa_data, dict) else None,
+                "mechanical_risk": None,
+                "confidence_level": None,
                 "ai_output_json": json.dumps(a) if a else None
             })
             report["trace_id"] = trace_id
