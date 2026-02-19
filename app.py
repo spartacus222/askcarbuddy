@@ -863,10 +863,11 @@ ANALYSIS_JSON_SCHEMA = """{
     "things_to_love": "<what's mechanically great about this powertrain/platform -- e.g., 'The 4.0L V6 with the 5-speed auto is Toyota's simplest, most proven combo. No turbo, no CVT, no hybrid complexity -- just straightforward reliability.'>"
   },
   "nhtsa_intel": {
-    "summary": "<clean summary -- e.g., 'NHTSA shows 2 recalls for the 2019 4Runner model year, both with available fixes. 14 total complaints filed -- very low volume.'>",
-    "recall_status": "<e.g., '2 recalls on file -- both are free manufacturer fixes. Check completion status at nhtsa.gov/recalls with your VIN.' or 'No NHTSA data available'>",
-    "reassurances": ["<positive safety/reliability note specific to this car>"],
-    "verify_items": ["<framed as smart due diligence, NOT red flags -- e.g., 'Confirm recall completion at dealer -- takes 2 minutes and they fix it free'>"]
+    "unrepaired_recalls": "<exact count from NHTSA API -- e.g., '2' or '0'>",
+    "recall_details": ["<ONLY if recalls exist: exact recall ID and full description from NHTSA API>"],
+    "total_complaints": "<exact count from NHTSA API -- e.g., '14' or '0'>",
+    "complaint_summary": "<ONLY if complaints exist: factual summary of categories -- e.g., 'Stalling (5), Delay (3)'. If none: '0 complaints.'>",
+    "data_source": "<Always: 'NHTSA vPIC API for VIN [VIN]'>""
   },
   "know_your_car": {
     "generation_overview": "<2-3 sentences about THIS generation -- enthusiastic but factual>",

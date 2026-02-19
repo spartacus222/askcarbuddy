@@ -466,12 +466,16 @@ if(ms.outlook){h+='<p class="sub-text">'+ms.outlook+'</p>'}
 if(ms.things_to_love){h+='<div class="flag-good" style="margin-top:8px">\u2713 '+ms.things_to_love+'</div>'}
 h+='</div>'}
 
-// SECTION 4: NHTSA Intel
-if(ni.summary){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCC1</span>NHTSA Intel</div>';
-h+='<p class="sub-text">'+ni.summary+'</p>';
-if(ni.recall_status){h+='<p class="sub-text" style="margin-top:10px">'+ni.recall_status+'</p>'}
-(ni.reassurances||[]).forEach(function(r){h+='<div class="flag-good">\u2713 '+r+'</div>'});
-(ni.verify_items||[]).forEach(function(r){h+='<div class="flag-verify">\u25C9 '+r+'</div>'});
+// SECTION 4: NHTSA Intel — Data-Only
+if(ni.unrepaired_recalls!==undefined||ni.total_complaints!==undefined){h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCC1</span>NHTSA Safety</div>';
+var recalls=ni.unrepaired_recalls||'?';var comps=ni.total_complaints||'?';
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">';
+h+='<div style="background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--text1)">'+recalls+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase">Recalls</div></div>';
+h+='<div style="background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--text1)">'+comps+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase">Complaints</div></div></div>';
+if((ni.recall_details||[]).length>0){h+='<h4 style="margin:12px 0 8px;font-size:13px;font-weight:600;text-transform:uppercase">Recalls</h4>';
+(ni.recall_details||[]).forEach(function(r){h+='<div style="padding:8px;background:rgba(249,115,22,0.08);border-left:2px solid #f97316;margin-bottom:6px;font-size:13px">'+r+'</div>'});}
+if(ni.complaint_summary){h+='<h4 style="margin:12px 0 8px;font-size:13px;font-weight:600;text-transform:uppercase">Complaints</h4><div style="font-size:13px;color:var(--text2)">'+ni.complaint_summary+'</div>'}
+if(ni.data_source){h+='<div style="margin-top:12px;padding:8px;background:rgba(0,212,255,0.04);border-radius:4px;font-size:11px;color:var(--text3);border-left:2px solid var(--accent)">'+ni.data_source+'</div>'}
 h+='</div>'}
 
 // SECTION 5: Know Your Car (replaces What to Know)
