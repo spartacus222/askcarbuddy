@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AskCarBuddy — AI Car Buying Intelligence</title>
+<meta name="description" content="Paste any car listing. Get pro-level buying intelligence in seconds. Risk scores, deal analysis, and smart questions — powered by AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050507;--bg2:#0a0a0f;--card:#0f1015;--card2:#15151d;--card3:#1a1a24;--border:#1e1e2e;--border2:#2a2a3a;--text:#f0f0f5;--text2:#8888a0;--text3:#55556a;--green:#00ff88;--green2:#00cc6a;--green-glow:rgba(0,255,136,0.15);--amber:#ffaa00;--red:#ff4466;--blue:#4488ff;--purple:#8855ff;--cyan:#00ddff;--gradient:linear-gradient(135deg,#00ff88 0%,#00ddff 50%,#8855ff 100%);--gradient2:linear-gradient(135deg,#00ff88 0%,#00ddff 100%)}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+::selection{background:var(--green);color:#000}
+
+/* ===== NAVBAR ===== */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 32px;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(20px);background:rgba(5,5,7,0.8);border-bottom:1px solid transparent;transition:border .3s}
+.nav.scrolled{border-bottom-color:var(--border)}
+.nav-logo{font-size:1.25rem;font-weight:800;letter-spacing:-0.5px}
+.nav-logo span{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-cta{padding:8px 20px;background:var(--green);color:#000;font-weight:700;font-size:0.85rem;border:none;border-radius:8px;cursor:pointer;transition:all .2s}
+.nav-cta:hover{background:#00ffaa;transform:translateY(-1px);box-shadow:0 4px 20px var(--green-glow)}
+
+/* ===== HERO ===== */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 20%,rgba(0,255,136,0.06) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(136,85,255,0.04) 0%,transparent 50%);animation:bgPulse 8s ease-in-out infinite alternate;pointer-events:none}
+@keyframes bgPulse{0%{transform:scale(1) rotate(0deg)}100%{transform:scale(1.1) rotate(3deg)}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--card2);border:1px solid var(--border);border-radius:50px;font-size:0.8rem;color:var(--text2);margin-bottom:32px;animation:fadeUp .6s ease}
+.hero-badge .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero h1{font-size:clamp(2.5rem,7vw,5rem);font-weight:900;letter-spacing:-2px;line-height:1.05;margin-bottom:20px;animation:fadeUp .6s ease .1s both}
+.hero h1 .accent{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero .sub{font-size:clamp(1rem,2.5vw,1.3rem);color:var(--text2);max-width:600px;margin:0 auto 40px;font-weight:400;animation:fadeUp .6s ease .2s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+/* ===== ANALYZER ===== */
+.analyzer{max-width:680px;width:100%;margin:0 auto;animation:fadeUp .6s ease .3s both}
+.input-wrap{position:relative;display:flex;gap:10px;background:var(--card);border:2px solid var(--border);border-radius:16px;padding:6px;transition:border .3s,box-shadow .3s}
+.input-wrap:focus-within{border-color:var(--green);box-shadow:0 0 30px var(--green-glow)}
+.url-input{flex:1;padding:14px 18px;background:transparent;border:none;color:var(--text);font-size:1rem;font-family:inherit;outline:none}
+.url-input::placeholder{color:var(--text3)}
+.analyze-btn{padding:14px 28px;background:var(--green);color:#000;font-weight:700;font-size:0.95rem;border:none;border-radius:12px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
+.analyze-btn:hover{background:#00ffaa;box-shadow:0 4px 20px var(--green-glow)}
+.analyze-btn:disabled{background:var(--card3);color:var(--text3);cursor:not-allowed;box-shadow:none}
+.input-hint{text-align:center;margin-top:14px;font-size:0.82rem;color:var(--text3)}
+.input-hint b{color:var(--text2)}
+
+/* ===== LOADING ===== */
+.loading{display:none;text-align:center;padding:60px 20px;max-width:680px;margin:0 auto}
+.loader{position:relative;width:60px;height:60px;margin:0 auto 24px}
+.loader-ring{position:absolute;inset:0;border:3px solid transparent;border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
+.loader-ring:nth-child(2){inset:8px;border-top-color:var(--cyan);animation-duration:1.5s;animation-direction:reverse}
+.loader-ring:nth-child(3){inset:16px;border-top-color:var(--purple);animation-duration:2s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:var(--text2);font-size:0.95rem}
+.loading-steps{margin-top:16px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.load-step{padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:0.75rem;color:var(--text3);transition:all .3s}
+.load-step.active{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.05)}
+.load-step.done{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.1)}
+
+/* ===== ERROR ===== */
+.error{display:none;max-width:680px;margin:16px auto;background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.2);border-radius:12px;padding:16px 20px;color:var(--red);font-size:0.92rem}
+
+/* ===== FEATURES ===== */
+.features{padding:100px 24px;max-width:1100px;margin:0 auto}
+.section-label{text-align:center;font-size:0.75rem;text-transform:uppercase;letter-spacing:3px;color:var(--green);font-weight:600;margin-bottom:12px}
+.section-title{text-align:center;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-1px;margin-bottom:16px}
+.section-sub{text-align:center;color:var(--text2);max-width:550px;margin:0 auto 60px;font-size:1.05rem}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all .3s}
+.feature-card:hover{border-color:var(--border2);transform:translateY(-2px);background:var(--card2)}
+.feature-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:16px}
+.fi-green{background:rgba(0,255,136,0.1);color:var(--green)}
+.fi-blue{background:rgba(68,136,255,0.1);color:var(--blue)}
+.fi-purple{background:rgba(136,85,255,0.1);color:var(--purple)}
+.fi-amber{background:rgba(255,170,0,0.1);color:var(--amber)}
+.fi-cyan{background:rgba(0,221,255,0.1);color:var(--cyan)}
+.fi-red{background:rgba(255,68,102,0.1);color:var(--red)}
+.feature-card h3{font-size:1rem;font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:0.88rem;color:var(--text2);line-height:1.5}
+
+/* ===== SCORE SHOWCASE ===== */
+.showcase{padding:80px 24px;max-width:900px;margin:0 auto}
+.score-demo{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:50px}
+.demo-score{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 20px;text-align:center;transition:all .3s}
+.demo-score:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+.demo-val{font-size:3rem;font-weight:900;line-height:1}
+.demo-ring{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative}
+.demo-ring::before{content:'';position:absolute;inset:0;border-radius:50%;border:3px solid var(--border)}
+.demo-ring::after{content:'';position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:var(--green)}
+.demo-name{font-size:0.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-top:12px}
+.demo-sub{font-size:0.85rem;color:var(--text2);margin-top:6px;font-weight:500}
+
+/* ===== HOW IT WORKS ===== */
+.how{padding:80px 24px;max-width:800px;margin:0 auto}
+.steps{display:flex;flex-direction:column;gap:0}
+.step-item{display:flex;gap:24px;padding:28px 0;position:relative}
+.step-item:not(:last-child)::after{content:'';position:absolute;left:23px;top:76px;bottom:0;width:2px;background:var(--border)}
+.step-num{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex-shrink:0;border:2px solid var(--border);color:var(--text2);transition:all .3s}
+.step-item:hover .step-num{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.05)}
+.step-content h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.step-content p{color:var(--text2);font-size:0.92rem}
+
+/* ===== CTA ===== */
+.cta{padding:100px 24px;text-align:center}
+.cta-box{max-width:700px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:60px 40px;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;top:-50%;right:-50%;width:100%;height:100%;background:radial-gradient(circle,rgba(0,255,136,0.06) 0%,transparent 60%);pointer-events:none}
+.cta-box h2{font-size:2rem;font-weight:800;margin-bottom:12px;letter-spacing:-0.5px}
+.cta-box p{color:var(--text2);margin-bottom:32px;font-size:1.05rem}
+.cta-btn{display:inline-flex;align-items:center;gap:8px;padding:16px 36px;background:var(--green);color:#000;font-weight:700;font-size:1.05rem;border:none;border-radius:12px;cursor:pointer;transition:all .2s;font-family:inherit;text-decoration:none}
+.cta-btn:hover{background:#00ffaa;transform:translateY(-2px);box-shadow:0 8px 30px var(--green-glow)}
+
+/* ===== FOOTER ===== */
+.footer{padding:40px 24px;text-align:center;color:var(--text3);font-size:0.82rem;border-top:1px solid var(--border)}
+
+/* ===== REPORT ===== */
+.report{display:none;max-width:840px;margin:0 auto;padding:20px;animation:fadeUp .4s}
+.score-banner{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden}
+.score-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient)}
+.vehicle-title{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px}
+.vehicle-meta{color:var(--text2);font-size:0.88rem;margin-bottom:20px}
+.score-big{font-size:4rem;font-weight:900;line-height:1;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.score-label{font-size:1.1rem;font-weight:600;margin-top:8px}
+.score-liner{color:var(--text2);margin-top:8px;font-size:0.95rem;max-width:500px;margin-left:auto;margin-right:auto}
+.score-trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.trio-item{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;text-align:center}
+.trio-val{font-size:2rem;font-weight:900;line-height:1}
+.trio-name{font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-top:8px}
+.trio-sub{font-size:0.82rem;margin-top:4px;font-weight:500}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:12px}
+.card-title{font-size:1.05rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.icon{font-size:1.2rem}
+.glance-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.glance-item{background:var(--card2);border-radius:12px;padding:16px}
+.glance-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:6px}
+.glance-value{font-size:0.92rem;font-weight:500}
+.flag-good{background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:10px;padding:10px 14px;margin:4px 0;color:var(--green);font-size:0.88rem}
+.flag-verify{background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.15);border-radius:10px;padding:10px 14px;margin:4px 0;color:var(--amber);font-size:0.88rem}
+.chart-container{position:relative;height:100px;display:flex;align-items:flex-end;gap:3px;margin:14px 0}
+.chart-bar{background:var(--card3);border-radius:4px 4px 0 0;flex:1;min-width:16px;transition:all .3s}
+.chart-bar.active{background:var(--green)}
+.chart-labels{display:flex;justify-content:space-between;color:var(--text3);font-size:0.72rem;margin-top:4px}
+.love-tag{display:inline-block;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);color:var(--green);padding:5px 14px;border-radius:20px;font-size:0.82rem;font-weight:500;margin:3px}
+.quirk{background:var(--card2);border-radius:12px;padding:16px;margin-bottom:8px}
+.quirk-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.quirk-name{font-weight:600;font-size:0.95rem}
+.sev{padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.sev-minor_quirk{background:rgba(0,255,136,0.1);color:var(--green)}.sev-worth_checking{background:rgba(255,170,0,0.1);color:var(--amber)}.sev-important{background:rgba(255,68,102,0.1);color:var(--red)}
+.quirk-detail{color:var(--text2);font-size:0.88rem;margin-bottom:4px}
+.quirk-action{color:var(--green);font-size:0.88rem;font-weight:500}
+.big-ticket{background:var(--card2);border-left:3px solid var(--blue);border-radius:0 12px 12px 0;padding:16px 18px;margin:12px 0;font-size:0.92rem}
+.maint-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--card2);border-radius:10px;margin-bottom:6px}
+.maint-info{flex:1}.maint-svc{font-weight:500;font-size:0.92rem}.maint-cost{color:var(--text2);font-size:0.82rem}.maint-why{color:var(--text2);font-size:0.8rem;margin-top:2px}
+.urg{padding:3px 10px;border-radius:8px;font-size:0.66rem;font-weight:700;text-transform:uppercase;white-space:nowrap;letter-spacing:0.5px}
+.urg-due_now{background:rgba(255,68,102,0.1);color:var(--red)}.urg-next_3_months,.urg-soon{background:rgba(255,170,0,0.1);color:var(--amber)}.urg-next_6_months,.urg-within_6_months{background:rgba(0,255,136,0.08);color:var(--green)}.urg-next_year,.urg-within_a_year{background:rgba(68,136,255,0.1);color:var(--blue)}
+.step{display:flex;gap:12px;margin-bottom:16px}.step-n{width:28px;height:28px;background:var(--green);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;flex-shrink:0;margin-top:2px}
+.step-q{font-weight:600;font-size:0.95rem;margin-bottom:3px}.step-why{color:var(--text2);font-size:0.84rem;margin-bottom:3px}.step-sig{font-size:0.84rem}
+.good{color:var(--green)}.warn{color:var(--amber)}
+.otd-box{background:var(--card2);border-radius:14px;padding:20px;text-align:center;margin:14px 0}
+.otd-price{font-size:2rem;font-weight:900;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.otd-lbl{color:var(--text2);font-size:0.82rem;margin-top:3px}
+.cost-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.cost-item{background:var(--card2);border-radius:10px;padding:14px;text-align:center}
+.cost-val{font-size:0.95rem;font-weight:700}.cost-lbl{font-size:0.68rem;color:var(--text2);margin-top:4px}
+.tip{background:var(--card2);border-left:3px solid var(--green);border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:8px;font-size:0.92rem}
+.fee-list{list-style:none}.fee-list li{padding:4px 0;color:var(--text2);font-size:0.88rem}.fee-list li.q{color:var(--amber)}
+.check-list{list-style:none}.check-list li{padding:6px 0 6px 24px;position:relative;font-size:0.92rem}.check-list li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}
+h4.section-head{color:var(--green);font-size:0.85rem;margin:18px 0 8px;text-transform:uppercase;letter-spacing:1px}
+.back-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:0.88rem;border-radius:10px;cursor:pointer;margin-bottom:20px;font-family:inherit;transition:all .2s}
+.back-btn:hover{border-color:var(--green);color:var(--green)}
+
+@media(max-width:768px){
+.feature-grid{grid-template-columns:1fr}
+.score-demo{grid-template-columns:1fr}
+.nav{padding:12px 16px}
+}
+@media(max-width:600px){
+.glance-grid,.score-trio{grid-template-columns:1fr}
+.cost-grid{grid-template-columns:1fr 1fr}
+.score-big{font-size:3rem}
+.trio-val{font-size:1.5rem}
+.input-wrap{flex-direction:column}
+.analyze-btn{width:100%}
+.hero h1{letter-spacing:-1px}
+}
+
+.confidence-bar{margin-top:18px}
+.conf-track{height:6px;background:var(--card3);border-radius:3px;overflow:hidden}
+.conf-fill{height:100%;background:var(--gradient);border-radius:3px;transition:width 1s ease}
+.conf-text{font-size:0.78rem;color:var(--text2);margin-top:6px}
+.trio-main{border:1px solid rgba(0,255,136,0.2);background:rgba(0,255,136,0.03)}
+.trio-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:8px}
+.deal-header{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.deal-label-big{font-size:1.3rem;font-weight:800}
+.deal-pct{color:var(--text2);font-size:0.95rem}
+.deal-target{background:var(--card2);border-radius:12px;padding:14px 18px;margin:10px 0}
+.deal-leverage{padding:8px 0}
+.dt-label{color:var(--text2);font-size:0.88rem}
+.dt-val{font-weight:700;font-size:1.05rem;color:var(--green)}
+.lev{padding:3px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;text-transform:uppercase}
+.lev-low{background:rgba(0,255,136,0.1);color:var(--green)}
+.lev-moderate{background:rgba(255,170,0,0.1);color:var(--amber)}
+.lev-high{background:rgba(255,68,102,0.1);color:var(--red)}
+.risk-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.risk-badge{padding:6px 16px;border-radius:10px;font-weight:700;font-size:0.85rem}
+.risk-prob{color:var(--text2);font-size:0.88rem}
+.sub-text{color:var(--text2);font-size:0.9rem;line-height:1.6;margin-top:8px}
+.script-box{background:var(--card2);border-left:3px solid var(--green);border-radius:0 12px 12px 0;padding:16px 20px;margin:8px 0;font-size:0.92rem;line-height:1.6;font-style:italic}
+.script-box.alt{border-left-color:var(--blue)}
+.desk-row{padding:10px 0;font-size:0.92rem;border-bottom:1px solid var(--border)}
+.desk-label{color:var(--text2);font-weight:500}
+.credit-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px}
+.credit-item{background:var(--card2);border-radius:12px;padding:14px;text-align:center}
+.credit-tier{font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:6px}
+.credit-apr{font-size:0.95rem;font-weight:600}
+.credit-excellent{border:1px solid rgba(0,255,136,0.2)}
+.credit-good{border:1px solid rgba(68,136,255,0.2)}
+.credit-fair{border:1px solid rgba(255,170,0,0.2)}
+.walkaway{border:1px solid rgba(255,170,0,0.15);background:rgba(255,170,0,0.02)}
+.walk-range{font-size:1rem;font-weight:600;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="nav" id="nav">
+  <div class="nav-logo">Ask<span>CarBuddy</span></div>
+  <button class="nav-cta" onclick="document.getElementById('analyzer').scrollIntoView({behavior:'smooth'})">Try It Free</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span> AI-Powered Car Intelligence</div>
+  <h1>Stop guessing.<br>Start <span class="accent">knowing.</span></h1>
+  <p class="sub">Paste any car listing URL and get a pro-level buyer intelligence brief in seconds. Market analysis, risk scores, smart questions — everything you need to buy smart.</p>
+
+  <div class="analyzer" id="analyzer">
+    <div class="input-wrap">
+      <input type="url" class="url-input" id="urlInput" placeholder="Paste any car listing URL..." autocomplete="off">
+      <button class="analyze-btn" id="analyzeBtn" onclick="go()">Analyze</button>
+    </div>
+    <div class="input-hint">Works with <b>any dealer site</b>, Cars.com, AutoTrader, CarGurus, Facebook & more</div>
+  </div>
+</section>
+
+<!-- LOADING -->
+<div class="loading" id="loading">
+  <div class="loader"><div class="loader-ring"></div><div class="loader-ring"></div><div class="loader-ring"></div></div>
+  <div class="loading-text">Analyzing your listing...</div>
+  <div class="loading-steps">
+    <span class="load-step" id="ls1">Scraping listing</span>
+    <span class="load-step" id="ls2">VIN decode</span>
+    <span class="load-step" id="ls3">Market comps</span>
+    <span class="load-step" id="ls4">Safety data</span>
+    <span class="load-step" id="ls5">Web research</span>
+    <span class="load-step" id="ls6">AI analysis</span>
+  </div>
+</div>
+
+<!-- ERROR -->
+<div class="error" id="error"></div>
+
+<!-- REPORT -->
+<div class="report" id="report"></div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-label">What you get</div>
+  <h2 class="section-title">Everything a pro buyer would check.<br>In 30 seconds.</h2>
+  <p class="section-sub">We pull data from 5+ sources and run AI analysis that would take a human researcher hours.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon fi-green">📊</div>
+      <h3>Know Your Score</h3>
+      <p>Instant market comparison against real listings nearby. Know if you're overpaying before you walk in.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-red">🛡️</div>
+      <h3>Vehicle History</h3>
+      <p>NHTSA recalls, complaint data, and severity analysis — all contextualized for this exact car.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-blue">🔍</div>
+      <h3>Market Price</h3>
+      <p>Real documented issues for this generation & engine. Not generic "check the tires" advice.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-purple">💬</div>
+      <h3>Owner Reviews</h3>
+      <p>Insider questions to ask the dealer that reveal what you can't find online. With red/green flag answers.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-amber">🔧</div>
+      <h3>Smart Questions</h3>
+      <p>Exactly what's due at this mileage, what it costs for this car, and what to budget for year one.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-cyan">💰</div>
+      <h3>Go Prepared</h3>
+      <p>Fuel, insurance, maintenance, depreciation — your all-in monthly cost with no surprises.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SCORE SHOWCASE -->
+<section class="showcase">
+  <div class="section-label">The trio</div>
+  <h2 class="section-title">One score. Full context.</h2>
+  <p class="section-sub">A decisive recommendation backed by market data, risk analysis, and insider intelligence.</p>
+  <div class="score-demo">
+    <div class="demo-score">
+      <div class="demo-val" style="color:var(--blue)">Below Market</div>
+      <div class="demo-name">Market Position</div>
+      <div class="demo-sub">4.6% under median</div>
+    </div>
+    <div class="demo-score" style="border:1px solid rgba(0,255,136,0.2);background:rgba(0,255,136,0.03)">
+      <div class="demo-val" style="color:var(--green)">8.2/10</div>
+      <div class="demo-name">Overall Score</div>
+      <div class="demo-sub">Strong Buy</div>
+    </div>
+    <div class="demo-score">
+      <div class="demo-val" style="color:var(--green)">Low</div>
+      <div class="demo-name">Mechanical Health</div>
+      <div class="demo-sub">~8% repair probability</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="section-label">How it works</div>
+  <h2 class="section-title">Three steps. Zero BS.</h2>
+  <div class="steps">
+    <div class="step-item"><div class="step-num">1</div><div class="step-content"><h3>Paste the URL</h3><p>Found a car you like? Copy the listing URL from any site and paste it in.</p></div></div>
+    <div class="step-item"><div class="step-num">2</div><div class="step-content"><h3>We do the homework</h3><p>Our AI scrapes the listing, decodes the VIN, pulls market data, safety records, owner reviews, and dealer intel.</p></div></div>
+    <div class="step-item"><div class="step-num">3</div><div class="step-content"><h3>Walk in armed</h3><p>Get a comprehensive buyer brief with scores, smart questions, maintenance timeline, and cost projections.</p></div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-box">
+    <h2>Ready to buy smart?</h2>
+    <p>Paste any listing and see what you've been missing.</p>
+    <a class="cta-btn" href="#analyzer">Analyze a Listing →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>AskCarBuddy — AI Car Buying Intelligence · Built with 🧠 by the CarClaw team</p>
+</footer>
+
+<script>
+const API=location.origin;
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>50)});
+
+let loadTimer;
+function animateSteps(){
+  const steps=['ls1','ls2','ls3','ls4','ls5','ls6'];
+  let i=0;
+  loadTimer=setInterval(()=>{
+    if(i>0)document.getElementById(steps[i-1]).classList.replace('active','done');
+    if(i<steps.length){document.getElementById(steps[i]).classList.add('active');i++}
+    else clearInterval(loadTimer);
+  },2500);
+}
+function resetSteps(){
+  clearInterval(loadTimer);
+  ['ls1','ls2','ls3','ls4','ls5','ls6'].forEach(id=>{
+    const el=document.getElementById(id);el.classList.remove('active','done');
+  });
+}
+
+async function go(){
+  const url=document.getElementById('urlInput').value.trim();if(!url)return;
+  const btn=document.getElementById('analyzeBtn'),ld=document.getElementById('loading'),err=document.getElementById('error'),rpt=document.getElementById('report');
+  // Hide hero content, show loading
+  document.querySelector('.hero').style.display='none';
+  document.querySelector('.features').style.display='none';
+  document.querySelector('.showcase').style.display='none';
+  document.querySelector('.how').style.display='none';
+  document.querySelector('.cta').style.display='none';
+  btn.disabled=true;btn.textContent='Analyzing...';ld.style.display='block';err.style.display='none';rpt.style.display='none';
+  resetSteps();animateSteps();
+  try{
+    const r=await fetch(API+'/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const d=await r.json();
+    if(d.trace_id)setTraceId(d.trace_id);
+    if(d.error){err.textContent=d.error;err.style.display='block';showSections()}
+    else{rpt.innerHTML=render(d);rpt.style.display='block'}
+  }catch(e){console.error('AskCarBuddy error:',e);err.textContent='Error: '+(e.message||'Connection failed')+'. Please try again.';err.style.display='block';showSections()}
+  ld.style.display='none';resetSteps();btn.disabled=false;btn.textContent='Analyze';
+}
+
+function showSections(){
+  document.querySelector('.hero').style.display='';
+  document.querySelector('.features').style.display='';
+  document.querySelector('.showcase').style.display='';
+  document.querySelector('.how').style.display='';
+  document.querySelector('.cta').style.display='';
+}
+
+function goBack(){
+  document.getElementById('report').style.display='none';
+  showSections();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+
+function osColor(s){return s>=8?'var(--green)':s>=6?'var(--amber)':s>=4?'#f97316':'var(--red)'}
+function dpColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('great')>=0||l.indexOf('good')>=0)return'var(--green)';if(l.indexOf('fair')>=0)return'var(--amber)';if(l.indexOf('high')>=0||l.indexOf('above')>=0)return'var(--red)';return'var(--text2)'}
+function mrColor(l){if(!l)return'var(--text2)';l=l.toLowerCase();if(l.indexOf('low')>=0)return'var(--green)';if(l.indexOf('moderate')>=0)return'var(--amber)';if(l.indexOf('high')>=0)return'#f97316';return'var(--red)'}
+function mrBg(l){if(!l)return'rgba(255,255,255,0.05)';l=l.toLowerCase();if(l.indexOf('low')>=0)return'rgba(74,222,128,0.15)';if(l.indexOf('moderate')>=0)return'rgba(251,191,36,0.15)';if(l.indexOf('high')>=0)return'rgba(249,115,22,0.15)';return'rgba(239,68,68,0.15)'}
+
+function paColor(v){if(!v)return'var(--text1)';v=v.toLowerCase();if(v.indexOf('great')>-1)return'var(--green)';if(v.indexOf('good')>-1)return'#4ade80';if(v.indexOf('fair')>-1)return'var(--amber)';return'#fb923c';}
+
+function render(d){
+var v=d.vehicle||{},a=d.analysis||{};
+var os=a.overall_score||{};
+var mys=a.model_year_summary||{};
+var vh=a.vehicle_history||{};
+var pa=a.price_analysis||{};
+var of=a.owner_feedback||{};
+var dq=a.dealer_questions||{};
+var md=d.market_data||{};
+
+var h='<button class="back-btn" onclick="goBack()">\u2190 Back</button>';
+
+// SCORE BANNER
+h+='<div class="score-banner">';
+h+='<div class="vehicle-title">'+(v.year||'')+' '+(v.make||'')+' '+(v.model||'')+' '+(v.trim||'')+'</div>';
+h+='<div class="vehicle-meta">'+(v.price?'$'+v.price.toLocaleString():'')+' \u00B7 '+(v.mileage?v.mileage.toLocaleString()+' mi':'')+' \u00B7 '+(v.color||'')+'</div>';
+h+='<div class="score-big">'+(os.score||'?')+'</div>';
+h+='<div class="score-label">'+(os.label||'')+'</div>';
+h+='<div class="score-liner">'+(os.one_liner||'')+'</div>';
+h+='</div>';
+
+// QUICK STATS ROW
+h+='<div class="score-trio">';
+h+='<div class="trio-item"><div class="trio-label">Price</div><div class="trio-val" style="color:'+paColor(pa.verdict)+'">'+(pa.verdict||'\u2014')+'</div><div class="trio-sub">'+(pa.vs_market||'')+'</div></div>';
+h+='<div class="trio-item trio-main"><div class="trio-label">Buy Score</div><div class="trio-val" style="color:'+osColor(os.score)+'">'+(os.score||'?')+'/10</div><div class="trio-sub">'+(os.label||'')+'</div></div>';
+h+='<div class="trio-item"><div class="trio-label">Recalls</div><div class="trio-val">'+(vh.recalls_for_model_year!=null?vh.recalls_for_model_year:'?')+'</div><div class="trio-sub">for model year</div></div>';
+h+='</div>';
+
+// SECTION 1: Know Your Car
+if(mys.headline||mys.highlights){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDE97</span>Know Your Car</div>';
+if(mys.headline){h+='<div class="big-ticket" style="margin-bottom:16px;border-left-color:var(--accent)">'+mys.headline+'</div>'}
+if(mys.generation){h+='<div style="margin-bottom:12px;padding:8px 12px;background:rgba(0,212,255,0.06);border-radius:8px;font-size:13px;color:var(--text2)"><strong>Generation:</strong> '+mys.generation+'</div>'}
+if(mys.what_changed_this_year){h+='<p class="sub-text" style="margin-bottom:12px">'+mys.what_changed_this_year+'</p>'}
+if(mys.highlights&&mys.highlights.length){h+='<h4 class="section-head">Highlights</h4>';mys.highlights.forEach(function(s){h+='<div class="flag-good">\u2713 '+s+'</div>'})}
+if(mys.engine_and_drivetrain){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(0,212,255,0.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">Powertrain</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+mys.engine_and_drivetrain+'</div></div>'}
+if(mys.fun_fact){h+='<div style="margin-top:10px;padding:10px 14px;background:rgba(251,191,36,0.06);border-left:3px solid var(--amber);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--amber);margin-bottom:6px">\uD83D\uDCA1 Fun Fact</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+mys.fun_fact+'</div></div>'}
+h+='</div>'}
+
+// SECTION 2: The History
+if(vh.headline||vh.recalls_for_model_year!=null){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCC4</span>The History</div>';
+if(vh.headline){h+='<div class="big-ticket" style="margin-bottom:16px;border-left-color:var(--green)">'+vh.headline+'</div>'}
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">';
+h+='<div style="background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--text1)">'+(vh.recalls_for_model_year!=null?vh.recalls_for_model_year:'?')+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase">Recalls</div></div>';
+h+='<div style="background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--text1)">'+(vh.complaints_for_model_year!=null?vh.complaints_for_model_year:'?')+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase">Complaints</div></div></div>';
+if(vh.recall_details&&vh.recall_details.length>0){vh.recall_details.forEach(function(r){h+='<div style="padding:8px;background:rgba(249,115,22,0.08);border-left:2px solid #f97316;margin-bottom:6px;font-size:13px">'+r+'</div>'})}
+if(vh.common_complaint_areas){h+='<div style="margin-top:8px;font-size:13px;color:var(--text2)"><strong>Common areas:</strong> '+vh.common_complaint_areas+'</div>'}
+if(vh.carfax_tip){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(74,222,128,0.06);border-left:3px solid var(--green);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--green);margin-bottom:6px">\uD83D\uDCCB Carfax Tip</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+vh.carfax_tip+'</div></div>'}
+if(vh.nhtsa_source){h+='<div style="margin-top:12px;padding:8px;background:rgba(0,212,255,0.04);border-radius:4px;font-size:11px;color:var(--text3);border-left:2px solid var(--accent)">'+vh.nhtsa_source+'</div>'}
+h+='</div>'}
+
+// SECTION 3: The Price
+if(pa.verdict||pa.vs_market){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCB2</span>The Price <span style="font-size:12px;color:var(--text2);font-weight:400">within 50 miles</span></div>';
+h+='<div class="deal-header"><div class="deal-label-big" style="color:'+paColor(pa.verdict)+'">'+(pa.verdict||'')+'</div><div class="deal-pct">'+(pa.vs_market||'')+'</div></div>';
+if(pa.comp_count){h+='<div style="margin:8px 0;font-size:13px;color:var(--text2)">Based on <strong>'+pa.comp_count+'</strong> comparable listings</div>'}
+if(pa.price_range){h+='<div class="deal-target"><span class="dt-label">Market Range:</span> <span class="dt-val">'+pa.price_range+'</span></div>'}
+if(pa.fair_range){h+='<div class="deal-target" style="margin-top:6px"><span class="dt-label">Fair Range:</span> <span class="dt-val">'+pa.fair_range+'</span></div>'}
+if(md&&md.price_buckets&&md.price_buckets.length){h+='<div class="chart-container">';
+var mx=Math.max.apply(null,md.price_buckets.map(function(b){return b.count}));
+md.price_buckets.forEach(function(b){var pct=(b.count/mx)*100;var act=v.price>=b.min&&v.price<b.max;
+h+='<div class="chart-bar'+(act?' active':'')+'" style="height:'+Math.max(4,pct)+'%" title="$'+b.min.toLocaleString()+'-$'+b.max.toLocaleString()+': '+b.count+' cars"></div>'});
+h+='</div><div class="chart-labels"><span>$'+(md.min_price?md.min_price.toLocaleString():'?')+'</span><span>$'+(md.max_price?md.max_price.toLocaleString():'?')+'</span></div>'}
+if(pa.context){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(0,212,255,0.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">Price Context</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+pa.context+'</div></div>'}
+if(pa.bottom_line){h+='<div style="margin-top:10px;padding:10px 14px;background:rgba(74,222,128,0.08);border-radius:8px;font-size:14px;font-weight:500;color:var(--text1)">\uD83D\uDCAC '+pa.bottom_line+'</div>'}
+h+='</div>'}
+
+// SECTION 4: Owner Talk
+if(of.headline||of.what_owners_love){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDDE3\uFE0F</span>What Owners Say</div>';
+if(of.headline){h+='<div class="big-ticket" style="margin-bottom:16px;border-left-color:var(--accent)">'+of.headline+'</div>'}
+if(of.what_owners_love&&of.what_owners_love.length){h+='<h4 class="section-head">What They Love</h4>';of.what_owners_love.forEach(function(s){h+='<div class="flag-good">\u2764\uFE0F '+s+'</div>'})}
+if(of.what_owners_wish_they_knew&&of.what_owners_wish_they_knew.length){h+='<h4 class="section-head">What They Wish They Knew</h4>';of.what_owners_wish_they_knew.forEach(function(s){h+='<div style="padding:8px 12px;background:rgba(251,191,36,0.06);border-left:2px solid var(--amber);margin-bottom:6px;font-size:13px">'+s+'</div>'})}
+if(of.common_experiences){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(0,212,255,0.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">Daily Life</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+of.common_experiences+'</div></div>'}
+if(of.reliability_reputation){h+='<div style="margin-top:10px;padding:10px 14px;background:rgba(74,222,128,0.08);border-radius:8px;font-size:14px;color:var(--text1)">\uD83D\uDEE1\uFE0F '+of.reliability_reputation+'</div>'}
+h+='</div>'}
+
+// SECTION 5: Go Prepared — Questions for the Dealer
+if(dq.questions&&dq.questions.length){
+h+='<div class="card"><div class="card-title"><span class="icon">\uD83D\uDCAC</span>Go Prepared</div>';
+h+='<h4 class="section-head">Smart Questions to Ask</h4>';
+dq.questions.forEach(function(q,i){h+='<div class="step"><div class="step-n">'+(i+1)+'</div><div><div class="step-q">\"'+(q.ask||'')+'\"</div>';
+h+='<div class="step-why">'+(q.why_it_matters||'')+'</div>';
+h+='<div class="step-sig"><span class="good">\u2713 Good answer: '+(q.good_answer||'')+'</span></div></div></div>'});
+if(dq.bonus_tip){h+='<div style="margin-top:14px;padding:12px 14px;background:rgba(251,191,36,0.06);border-left:3px solid var(--amber);border-radius:0 8px 8px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--amber);margin-bottom:6px">\uD83D\uDCA1 Insider Tip</div><div style="font-size:14px;line-height:1.5;color:var(--text1)">'+dq.bonus_tip+'</div></div>'}
+h+='</div>'}
+
+return h;
+}
+
+</script>
+
+<script>
+// === SELF-IMPROVING AGENT: Tracking Layer ===
+var _traceId = null;
+var _sectionTimers = {};
+var _pageStart = Date.now();
+
+function setTraceId(id) {
+    _traceId = id;
+    // Inject feedback UI after report loads
+    if (id) {
+        setTimeout(injectFeedbackUI, 500);
+        startSectionTracking();
+    }
+}
+
+function sendReward(type, value, meta) {
+    if (!_traceId) return;
+    fetch("/api/reward", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({trace_id: _traceId, signal_type: type, signal_value: value, metadata: meta})
+    }).catch(function(){});
+}
+
+function sendEvent(type, section, duration, scroll, meta) {
+    if (!_traceId) return;
+    fetch("/api/event", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({trace_id: _traceId, event_type: type, section_name: section, duration_ms: duration, scroll_depth: scroll, metadata: meta})
+    }).catch(function(){});
+}
+
+function injectFeedbackUI() {
+    var rp = document.getElementById("report");
+    if (!rp) return;
+    var existing = document.getElementById("feedback-bar");
+    if (existing) existing.remove();
+    var fb = document.createElement("div");
+    fb.id = "feedback-bar";
+    fb.innerHTML = '<div class="feedback-container">'
+        + '<div class="feedback-q">Was this report helpful?</div>'
+        + '<div class="feedback-btns">'
+        + '<button class="fb-btn fb-up" onclick="voteFeedback(1,this)">\uD83D\uDC4D Yes</button>'
+        + '<button class="fb-btn fb-down" onclick="voteFeedback(-1,this)">\uD83D\uDC4E No</button>'
+        + '</div>'
+        + '<div class="feedback-thanks" id="fb-thanks" style="display:none">Thanks! This helps us improve.</div>'
+        + '</div>';
+    rp.insertBefore(fb, rp.firstChild.nextSibling);
+}
+
+function voteFeedback(val, btn) {
+    sendReward("thumbs", val);
+    document.getElementById("fb-thanks").style.display = "block";
+    var btns = document.querySelectorAll(".fb-btn");
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].style.opacity = "0.4";
+        btns[i].style.pointerEvents = "none";
+    }
+    btn.style.opacity = "1";
+    btn.style.transform = "scale(1.1)";
+}
+
+function startSectionTracking() {
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            var name = entry.target.getAttribute("data-section");
+            if (!name) {
+                var title = entry.target.querySelector(".card-title");
+                name = title ? title.textContent.trim() : "unknown";
+            }
+            if (entry.isIntersecting) {
+                _sectionTimers[name] = Date.now();
+            } else if (_sectionTimers[name]) {
+                var dur = Date.now() - _sectionTimers[name];
+                if (dur > 500) sendEvent("section_view", name, dur);
+                delete _sectionTimers[name];
+            }
+        });
+    }, {threshold: 0.3});
+
+    setTimeout(function() {
+        var cards = document.querySelectorAll(".card, .score-banner, .score-trio, .walkaway");
+        for (var i = 0; i < cards.length; i++) observer.observe(cards[i]);
+    }, 1000);
+}
+
+// Track page unload
+window.addEventListener("beforeunload", function() {
+    if (!_traceId) return;
+    var totalTime = Date.now() - _pageStart;
+    // Flush remaining section timers
+    for (var name in _sectionTimers) {
+        var dur = Date.now() - _sectionTimers[name];
+        if (dur > 500) sendEvent("section_view", name, dur);
+    }
+    sendEvent("page_unload", null, totalTime, null, {sections_viewed: Object.keys(_sectionTimers).length});
+});
+</script>
+
+<style>
+.feedback-container{background:linear-gradient(135deg,rgba(0,255,136,0.05),rgba(0,212,255,0.05));border:1px solid rgba(0,255,136,0.15);border-radius:16px;padding:20px;margin:16px 0 24px;text-align:center}
+.feedback-q{font-size:1rem;font-weight:600;margin-bottom:12px;color:#fff}
+.feedback-btns{display:flex;gap:12px;justify-content:center}
+.fb-btn{padding:10px 28px;border-radius:12px;border:1px solid #2a2a3e;background:#12121a;color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.fb-btn:hover{transform:scale(1.05)}
+.fb-up:hover{border-color:#00ff88;background:rgba(0,255,136,0.1)}
+.fb-down:hover{border-color:#ff4466;background:rgba(255,68,102,0.1)}
+.feedback-thanks{color:#00ff88;font-size:0.85rem;margin-top:10px;font-weight:500}
+</style>
+
+</body>
+</html>

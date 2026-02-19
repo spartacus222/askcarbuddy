@@ -709,31 +709,220 @@ def get_dealer_reputation(dealer_name, dealer_location=None):
 # WEB RESEARCH ÃÂ¢ÃÂÃÂ Exa search for model-specific intelligence
 # ==============================================================
 
-def research_vehicle_web(year, make, model, trim=None):
-    """Search the web for known issues, owner reviews, and buying guides for this specific vehicle."""
+def research_model_year(year, make, model, trim=None):
+    """Targeted research: What's special about this model year / generation?"""
     if not EXA_API_KEY: return None
     vehicle_str = f"{year} {make} {model}"
     if trim: vehicle_str += f" {trim}"
-    try:
-        queries = [
-            f"{vehicle_str} common problems known issues owner complaints",
-            f"{vehicle_str} long term reliability review what owners say",
-        ]
-        all_text = []
-        for q in queries:
+    queries = [
+        f"{vehicle_str} generation changes what's new specs review",
+        f"{year} {make} {model} vs previous year changes improvements",
+    ]
+    return _exa_multi_search(queries, max_results=3, max_chars=1500)
+
+
+def research_owner_feedback(year, make, model, trim=None):
+    """Targeted research: Real owner experiences from forums and Reddit."""
+    if not EXA_API_KEY: return None
+    vehicle_str = f"{year} {make} {model}"
+    queries = [
+        f"site:reddit.com {vehicle_str} owner review experience",
+        f"{vehicle_str} forum owner long term review what I wish I knew",
+        f"{vehicle_str} real owner complaints pros cons daily driving",
+    ]
+    results = _exa_multi_search(queries, max_results=3, max_chars=2000)
+    if results:
+        # Tag each result with its source URL for citation
+        return results
+    return None
+
+
+def research_dealer_questions(year, make, model, trim=None):
+    """Targeted research: Known issues to ask about for THIS car."""
+    if not EXA_API_KEY: return None
+    vehicle_str = f"{year} {make} {model}"
+    queries = [
+        f"{vehicle_str} buying guide what to check inspection tips",
+        f"{vehicle_str} common problems to look for before buying",
+    ]
+    return _exa_multi_search(queries, max_results=3, max_chars=1500)
+
+
+def _exa_multi_search(queries, max_results=3, max_chars=1500):
+    """Execute multiple Exa searches and combine results with source URLs."""
+    all_results = []
+    for q in queries:
+        try:
             resp = requests.post(EXA_SEARCH_URL, json={
-                "query": q, "numResults": 3, "type": "auto",
-                "contents": {"text": {"maxCharacters": 1500}}
+                "query": q, "numResults": max_results, "type": "auto",
+                "contents": {"text": {"maxCharacters": max_chars}}
             }, headers={"x-api-key": EXA_API_KEY, "Content-Type": "application/json"}, timeout=12)
             if resp.status_code == 200:
                 for r in resp.json().get("results", []):
                     txt = r.get("text", "")
-                    if txt: all_text.append(txt[:1500])
-        if all_text:
-            return "\n---\n".join(all_text[:6])
-    except Exception as e:
-        log.warning(f"Web research failed: {e}")
+                    url = r.get("url", "")
+                    title = r.get("title", "")
+                    if txt:
+                        source_tag = f"[Source: {title} - {url}]" if url else ""
+                        all_results.append(f"{source_tag}\n{txt[:max_chars]}")
+        except Exception as e:
+            log.warning(f"Exa search failed for '{q[:50]}': {e}")
+    if all_results:
+        return "\n---\n".join(all_results[:8])
     return None
+
+
+# ==============================================================
+# SECTION GENERATORS (v9.1 Pipeline) 
+# Each section gets a focused mini-prompt with ONLY its relevant data
+# ==============================================================
+
+SECTION_PROMPTS = {
+    "model_year_summary": """You are a car expert writing one section of a buyer report.
+
+SECTION: "Know Your Car" — Model Year Summary
+VEHICLE: {vehicle_str}
+
+TASK: Write a concise summary of what makes this model year special. What generation is it? 
+What changed vs previous year? Key highlights (engine, tech, safety, design). Include a fun fact.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "headline": "<one punchy line about this model year>",
+  "generation": "<which generation — e.g., '4th Generation (2016-2023)'>",
+  "what_changed_this_year": "<specific changes for this model year>",
+  "highlights": ["<highlight 1>", "<highlight 2>", "<highlight 3>"],
+  "engine_and_drivetrain": "<1-2 sentences about powertrain>",
+  "fun_fact": "<one interesting thing most people don't know>"
+}}
+
+RULES:
+- ONLY use information from the research data above
+- If research data is thin, focus on what you DO know from the data
+- Name the specific car in every response
+- No generic filler""",
+
+    "vehicle_history": """You are a car expert writing one section of a buyer report.
+
+SECTION: "The History" — Vehicle Safety & Recall Data  
+VEHICLE: {vehicle_str}
+
+TASK: Summarize the NHTSA recall and complaint data for this model year. Frame recalls as 
+FREE manufacturer fixes (positive framing). Be factual and helpful, not scary.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "headline": "<one line — e.g., 'Clean model year with 2 recalls — both are free dealer fixes'>",
+  "recalls_for_model_year": <integer>,
+  "recall_details": ["<brief description of each recall + that it's a free fix>"],
+  "complaints_for_model_year": <integer>,
+  "common_complaint_areas": "<factual summary of top categories if any>",
+  "carfax_tip": "<specific advice about what to look for on Carfax for THIS car>",
+  "nhtsa_source": "NHTSA data for {year} {make} {model} model year — check this specific VIN at nhtsa.gov/recalls"
+}}
+
+RULES:
+- If 0 recalls, say that clearly as a positive
+- If 0 complaints, say that clearly as a positive
+- Frame recalls as free fixes, not scary defects
+- ONLY cite data provided — do NOT invent recalls or complaints
+- NHTSA data is for the MODEL YEAR, not this specific VIN — say that""",
+
+    "price_analysis": """You are a car market analyst writing one section of a buyer report.
+
+SECTION: "The Price" — Market Comparison
+VEHICLE: {vehicle_str}
+
+TASK: Analyze this car's price vs local market comps within 50 miles. Is it a good deal? 
+Use the actual numbers provided. Give a verdict and explain WHY.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "verdict": "<Great Deal|Good Deal|Fair Price|Slightly Above Market>",
+  "vs_market": "<exact comparison — e.g., '$1,290 above the $12,145 median of 6 local comps'>",
+  "comp_count": "<number of comparable listings within 50 miles>",
+  "price_range": "<local price range — e.g., '$9,295 - $14,995'>",
+  "fair_range": "<what you'd expect to pay — e.g., '$11,500 - $13,500'>",
+  "context": "<2-3 sentences explaining WHY — trim, mileage, condition vs comps. Cite numbers.>",
+  "bottom_line": "<one decisive sentence>"
+}}
+
+RULES:
+- ONLY use the market data numbers provided
+- If no comp data, say "No comparable listings found within 50 miles" 
+- Cite exact numbers from the data — never approximate when you have real figures
+- Be helpful — if it's above market, explain what might justify it""",
+
+    "owner_feedback": """You are a car expert writing one section of a buyer report.
+
+SECTION: "Owner Talk" — What Real Owners Say
+VEHICLE: {vehicle_str}
+
+TASK: Summarize what real owners say about this car based ONLY on the web research data below.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "headline": "<one line from REAL research — cite source if possible>",
+  "what_owners_love": ["<from research data>", "<from research data>"],
+  "what_owners_wish_they_knew": ["<from research data — cite source>"],
+  "common_experiences": "<2-3 sentences from real owner perspectives>",
+  "reliability_reputation": "<one sentence on reliability reputation>"
+}}
+
+CRITICAL RULES:
+- ONLY use the web research data provided below
+- Cite sources: "Owners on PriusChat report..." or "Reddit users mention..."
+- If the research data is empty or doesn't contain owner experiences, return:
+  {{
+    "headline": "Limited owner data found — check Reddit and forums for real experiences",
+    "what_owners_love": ["Research data was limited for this specific model — check r/{make_lower} and model-specific forums"],
+    "what_owners_wish_they_knew": ["No specific owner insights found in research"],
+    "common_experiences": "Limited owner-specific feedback available in our research. For real owner experiences, check Reddit r/{make_lower}, model-specific forums, and long-term review videos on YouTube.",
+    "reliability_reputation": "Check Consumer Reports and J.D. Power for official reliability ratings for the {year} {make} {model}."
+  }}
+- BANNED: "Some owners wish they knew about regular maintenance" — that's generic filler
+- BANNED: "It's important to stay up to date on recalls" — obvious and unhelpful  
+- Every bullet MUST come from the research data or honestly say "not found"
+- NO FABRICATED OWNER SENTIMENT""",
+
+    "dealer_questions": """You are a car buying expert writing one section of a buyer report.
+
+SECTION: "Go Prepared" — Smart Questions for the Dealer
+VEHICLE: {vehicle_str}
+
+TASK: Generate 5-7 smart, specific questions a buyer should ask about THIS car. 
+Use the vehicle data, NHTSA data, and research to craft questions that show homework.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "questions": [
+    {{
+      "ask": "<the exact question — specific to THIS car>",
+      "why_it_matters": "<what the answer tells you>",
+      "good_answer": "<what you want to hear>"
+    }}
+  ],
+  "bonus_tip": "<one insider tip about buying THIS type of car>"
+}}
+
+RULES:
+- Questions MUST reference this specific year/make/model
+- If NHTSA recalls exist, include a question about whether they've been addressed
+- If mileage is high, include a question about relevant service milestones
+- BANNED: "Can I see the Carfax?" — too generic
+- BANNED: "Has this car been in any accidents?" — too generic
+- Each question should show the buyer did their homework"""
+}
 
 
 # ==============================================================
@@ -784,7 +973,9 @@ SECTION 3: "The Price" (price_analysis)
 Use the market comparison data provided. How many comparable cars exist within 50 miles? Where does THIS car sit vs the median? Is it a good deal, fair deal, or slightly high? CITE THE ACTUAL NUMBERS. If this car is above median, explain WHY (lower miles, better trim, etc.). If below, say what a win that is. Give them a fair price range based on actual local comps.
 
 SECTION 4: "Owner Talk" (owner_feedback)
-What do real owners of this generation say? Pull from web research data. What do people love about it? What do they wish they knew before buying? Any common complaints that are worth knowing? Keep it real and balanced — this isn't a scare section, it's "here's what actual owners experience day-to-day."
+What do real owners of this generation say? ONLY use information from the web research data provided. If the web research contains actual owner experiences, forum posts, Reddit threads, or review quotes — use those. Be specific: "Owners on PriusChat report..." or "Reddit users mention..."
+
+CRITICAL: Do NOT fabricate generic owner wisdom. Statements like "some owners wish they knew about regular maintenance" or "others wish they knew about recall notices" are BANNED — that's filler, not research. Every bullet point must come from an actual source in the web research data. If the web research doesn't contain owner feedback, write: "Limited owner-specific feedback found in research — check Reddit r/[make] and model-specific forums for real owner experiences."
 
 SECTION 5: "Go Prepared" (dealer_questions)
 Give them 5-7 smart, specific questions to ask the dealer about THIS car. Not generic "can I see the Carfax" stuff. Questions that show they did their homework and will get them useful information. For each question, explain what the answer tells them.
@@ -798,6 +989,7 @@ QUALITY RULES
 3. No scare tactics — this is about helping them buy smart, not scaring them away
 4. Cite actual numbers from the data provided — don't round or approximate when you have exact figures
 5. Keep it concise — buyers want quick intel, not essays
+6. Owner Feedback MUST come from web research data — NEVER generate generic owner wisdom from your training data. If research doesn't include owner experiences, say so honestly. "Some owners wish they knew about regular maintenance" is BANNED — that's filler, not intel.
 """
 
 
@@ -844,15 +1036,15 @@ ANALYSIS_JSON_SCHEMA = """{
     "bottom_line": "<one sentence final take — e.g., 'Slightly above median but justified by lower mileage and nav package. Fair price for what you're getting.'>"
   },
   "owner_feedback": {
-    "headline": "<one line — e.g., 'Owners love the 50+ MPG but wish the road noise was better'>",
+    "headline": "<one line from REAL research — e.g., 'Reddit owners love the 50+ MPG but warn about road noise on highways'>",
     "what_owners_love": [
       "<specific thing owners rave about — from forums/reviews/web research>",
       "<another thing>",
       "<another thing>"
     ],
     "what_owners_wish_they_knew": [
-      "<something owners commonly mention they wish they knew before buying>",
-      "<another thing>"
+      "<MUST be from actual web research — e.g., 'PriusChat users say the 12V battery dies without warning around year 5' — NO generic advice like 'regular maintenance is important'>",
+      "<another specific thing from research — or omit this array if no real owner insights found>"
     ],
     "common_experiences": "<2-3 sentences about what daily ownership is actually like — from real owner perspectives>",
     "reliability_reputation": "<one sentence on how this generation is regarded for reliability>"
@@ -923,126 +1115,403 @@ def build_vehicle_identity(vehicle_info, vin_decode=None):
     return "\n".join(lines)
 
 
-def generate_analysis(vehicle_info, market_data, nhtsa_data, dealer_rep, listing_text="", vin_decode=None, web_research=None):
-    # Build the identity card
-    identity = build_vehicle_identity(vehicle_info, vin_decode)
+SECTION_PROMPTS = {
+    "model_year_summary": """You are a car expert writing one section of a buyer report.
+
+SECTION: "Know Your Car" — Model Year Summary
+VEHICLE: {vehicle_str}
+
+TASK: Write a concise summary of what makes this model year special. What generation is it? 
+What changed vs previous year? Key highlights (engine, tech, safety, design). Include a fun fact.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "headline": "<one punchy line about this model year>",
+  "generation": "<which generation — e.g., '4th Generation (2016-2023)'>",
+  "what_changed_this_year": "<specific changes for this model year>",
+  "highlights": ["<highlight 1>", "<highlight 2>", "<highlight 3>"],
+  "engine_and_drivetrain": "<1-2 sentences about powertrain>",
+  "fun_fact": "<one interesting thing most people don't know>"
+}}
+
+RULES:
+- ONLY use information from the research data above
+- If research data is thin, focus on what you DO know from the data
+- Name the specific car in every response
+- No generic filler""",
+
+    "vehicle_history": """You are a car expert writing one section of a buyer report.
+
+SECTION: "The History" — Vehicle Safety & Recall Data  
+VEHICLE: {vehicle_str}
+
+TASK: Summarize the NHTSA recall and complaint data for this model year. Frame recalls as 
+FREE manufacturer fixes (positive framing). Be factual and helpful, not scary.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "headline": "<one line — e.g., 'Clean model year with 2 recalls — both are free dealer fixes'>",
+  "recalls_for_model_year": <integer>,
+  "recall_details": ["<brief description of each recall + that it's a free fix>"],
+  "complaints_for_model_year": <integer>,
+  "common_complaint_areas": "<factual summary of top categories if any>",
+  "carfax_tip": "<specific advice about what to look for on Carfax for THIS car>",
+  "nhtsa_source": "NHTSA data for {year} {make} {model} model year — check this specific VIN at nhtsa.gov/recalls"
+}}
+
+RULES:
+- If 0 recalls, say that clearly as a positive
+- If 0 complaints, say that clearly as a positive
+- Frame recalls as free fixes, not scary defects
+- ONLY cite data provided — do NOT invent recalls or complaints
+- NHTSA data is for the MODEL YEAR, not this specific VIN — say that""",
+
+    "price_analysis": """You are a car market analyst writing one section of a buyer report.
+
+SECTION: "The Price" — Market Comparison
+VEHICLE: {vehicle_str}
+
+TASK: Analyze this car's price vs local market comps within 50 miles. Is it a good deal? 
+Use the actual numbers provided. Give a verdict and explain WHY.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "verdict": "<Great Deal|Good Deal|Fair Price|Slightly Above Market>",
+  "vs_market": "<exact comparison — e.g., '$1,290 above the $12,145 median of 6 local comps'>",
+  "comp_count": "<number of comparable listings within 50 miles>",
+  "price_range": "<local price range — e.g., '$9,295 - $14,995'>",
+  "fair_range": "<what you'd expect to pay — e.g., '$11,500 - $13,500'>",
+  "context": "<2-3 sentences explaining WHY — trim, mileage, condition vs comps. Cite numbers.>",
+  "bottom_line": "<one decisive sentence>"
+}}
+
+RULES:
+- ONLY use the market data numbers provided
+- If no comp data, say "No comparable listings found within 50 miles" 
+- Cite exact numbers from the data — never approximate when you have real figures
+- Be helpful — if it's above market, explain what might justify it""",
+
+    "owner_feedback": """You are a car expert writing one section of a buyer report.
+
+SECTION: "Owner Talk" — What Real Owners Say
+VEHICLE: {vehicle_str}
+
+TASK: Summarize what real owners say about this car based ONLY on the web research data below.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "headline": "<one line from REAL research — cite source if possible>",
+  "what_owners_love": ["<from research data>", "<from research data>"],
+  "what_owners_wish_they_knew": ["<from research data — cite source>"],
+  "common_experiences": "<2-3 sentences from real owner perspectives>",
+  "reliability_reputation": "<one sentence on reliability reputation>"
+}}
+
+CRITICAL RULES:
+- ONLY use the web research data provided below
+- Cite sources: "Owners on PriusChat report..." or "Reddit users mention..."
+- If the research data is empty or doesn't contain owner experiences, return:
+  {{
+    "headline": "Limited owner data found — check Reddit and forums for real experiences",
+    "what_owners_love": ["Research data was limited for this specific model — check r/{make_lower} and model-specific forums"],
+    "what_owners_wish_they_knew": ["No specific owner insights found in research"],
+    "common_experiences": "Limited owner-specific feedback available in our research. For real owner experiences, check Reddit r/{make_lower}, model-specific forums, and long-term review videos on YouTube.",
+    "reliability_reputation": "Check Consumer Reports and J.D. Power for official reliability ratings for the {year} {make} {model}."
+  }}
+- BANNED: "Some owners wish they knew about regular maintenance" — that's generic filler
+- BANNED: "It's important to stay up to date on recalls" — obvious and unhelpful  
+- Every bullet MUST come from the research data or honestly say "not found"
+- NO FABRICATED OWNER SENTIMENT""",
+
+    "dealer_questions": """You are a car buying expert writing one section of a buyer report.
+
+SECTION: "Go Prepared" — Smart Questions for the Dealer
+VEHICLE: {vehicle_str}
+
+TASK: Generate 5-7 smart, specific questions a buyer should ask about THIS car. 
+Use the vehicle data, NHTSA data, and research to craft questions that show homework.
+
+{data_context}
+
+OUTPUT FORMAT (JSON):
+{{
+  "questions": [
+    {{
+      "ask": "<the exact question — specific to THIS car>",
+      "why_it_matters": "<what the answer tells you>",
+      "good_answer": "<what you want to hear>"
+    }}
+  ],
+  "bonus_tip": "<one insider tip about buying THIS type of car>"
+}}
+
+RULES:
+- Questions MUST reference this specific year/make/model
+- If NHTSA recalls exist, include a question about whether they've been addressed
+- If mileage is high, include a question about relevant service milestones
+- BANNED: "Can I see the Carfax?" — too generic
+- BANNED: "Has this car been in any accidents?" — too generic
+- Each question should show the buyer did their homework"""
+}
+
+
+def generate_section(section_name, vehicle_info, data_context_str):
+    """Generate a single section using a focused mini-prompt."""
+    v = vehicle_info
+    vehicle_str = f"{v.get('year', '?')} {v.get('make', '?')} {v.get('model', '?')}"
+    if v.get('trim'):
+        vehicle_str += f" {v['trim']}"
+
+    prompt_template = SECTION_PROMPTS.get(section_name)
+    if not prompt_template:
+        log.error(f"No prompt template for section: {section_name}")
+        return None
+
+    prompt = prompt_template.format(
+        vehicle_str=vehicle_str,
+        data_context=data_context_str,
+        year=v.get('year', '?'),
+        make=v.get('make', '?'),
+        model=v.get('model', '?'),
+        make_lower=str(v.get('make', '')).lower(),
+    )
+
+    try:
+        resp = requests.post(GROQ_URL, json={
+            "model": GROQ_MODEL,
+            "messages": [
+                {"role": "system", "content": "You are a car buying expert. Return ONLY valid JSON matching the requested schema. No markdown, no explanation — just the JSON object."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.15,
+            "max_tokens": 3000,
+            "response_format": {"type": "json_object"}
+        }, headers={
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }, timeout=30)
+
+        if resp.status_code == 200:
+            content = resp.json()["choices"][0]["message"]["content"]
+            return json.loads(content)
+        else:
+            log.error(f"Section {section_name} LLM error: {resp.status_code} - {resp.text[:200]}")
+    except Exception as e:
+        log.error(f"Section {section_name} generation failed: {e}")
+    return None
+
+
+def generate_overall_score(vehicle_info, sections):
+    """Final pass: generate overall score based on all section outputs."""
+    v = vehicle_info
+    vehicle_str = f"{v.get('year', '?')} {v.get('make', '?')} {v.get('model', '?')}"
+
+    prompt = f"""Based on these section analyses for a {vehicle_str}, generate an overall buying confidence score.
+
+SECTIONS:
+{json.dumps(sections, indent=2, default=str)[:6000]}
+
+OUTPUT FORMAT (JSON):
+{{
+  "score": <0.0-10.0 with one decimal>,
+  "label": "<Strong Buy|Buy|Lean Buy|Neutral|Lean Pass>",
+  "one_liner": "<one decisive sentence about this specific car>"
+}}
+
+Score guide: 8+ = great buy, 6-8 = solid, 4-6 = proceed with caution, <4 = think twice"""
+
+    try:
+        resp = requests.post(GROQ_URL, json={
+            "model": GROQ_MODEL,
+            "messages": [
+                {"role": "system", "content": "Return ONLY valid JSON. No explanation."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.1,
+            "max_tokens": 500,
+            "response_format": {"type": "json_object"}
+        }, headers={
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }, timeout=15)
+        if resp.status_code == 200:
+            return json.loads(resp.json()["choices"][0]["message"]["content"])
+    except Exception as e:
+        log.error(f"Overall score generation failed: {e}")
+    return {"score": 5.0, "label": "Neutral", "one_liner": f"Report generated for {vehicle_str}"}
+
+
+def generate_analysis_pipeline(vehicle_info, market_data, nhtsa_data, dealer_rep, listing_text="", vin_decode=None):
+    """
+    v9.1 PIPELINE: Section-by-section report generation.
+    Each section gets its own targeted research + focused LLM call.
+    No more single monolithic prompt that hallucinates when data is thin.
+    """
+    import concurrent.futures
 
     v = vehicle_info
-    context_parts = [identity]
+    year = v.get("year")
+    make = v.get("make")
+    model = v.get("model")
+    trim = v.get("trim")
+    vehicle_str = f"{year} {make} {model}"
+    identity = build_vehicle_identity(vehicle_info, vin_decode)
 
-    # MARKET DATA
-    if market_data:
-        m = market_data
-        context_parts.append(f"\nMARKET DATA ({m['comp_count']} comparable listings within 50 miles):")
-        context_parts.append(f"  Median: ${m['median_price']:,}  |  Average: ${m['avg_price']:,}")
-        context_parts.append(f"  Range: ${m['min_price']:,} - ${m['max_price']:,}")
-        if m.get('percentile') is not None:
-            context_parts.append(f"  This car's percentile: {m['percentile']}th (lower = cheaper)")
-        if m.get('savings') is not None:
-            if m['savings'] > 0:
-                context_parts.append(f"  >>> ${m['savings']:,} BELOW median <<<")
-            elif m['savings'] < 0:
-                context_parts.append(f"  >>> ${abs(m['savings']):,} ABOVE median <<<")
-        if m.get('deal_score'):
-            context_parts.append(f"  Deal score: {m['deal_score']}/10")
-        context_parts.append(f"  Total supply: {m['total_market']} similar vehicles on market")
-        if m.get('mileage_prices') and v.get('mileage'):
-            similar = [x for x in m['mileage_prices'] if abs(x['mileage'] - v['mileage']) < 20000]
-            if similar:
-                sp = [x['price'] for x in similar]
-                context_parts.append(f"  Similar-mileage comps: avg ${sum(sp)//len(sp):,} ({len(sp)} listings)")
+    # =====================================================
+    # PHASE 1: Parallel targeted research (3 Exa searches)
+    # =====================================================
+    log.info(f"Pipeline Phase 1: Parallel research for {vehicle_str}")
 
-    # NHTSA DATA
+    model_year_research = None
+    owner_research = None
+    dealer_research = None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+        fut_model = ex.submit(research_model_year, year, make, model, trim)
+        fut_owner = ex.submit(research_owner_feedback, year, make, model, trim)
+        fut_dealer = ex.submit(research_dealer_questions, year, make, model, trim)
+
+        model_year_research = fut_model.result()
+        owner_research = fut_owner.result()
+        dealer_research = fut_dealer.result()
+
+    log.info(f"Research complete: model_year={'yes' if model_year_research else 'no'}, "
+             f"owner={'yes' if owner_research else 'no'}, dealer={'yes' if dealer_research else 'no'}")
+
+    # =====================================================
+    # PHASE 2: Build section-specific data contexts
+    # =====================================================
+
+    # Section 1: Model Year Summary — gets model year research + basic identity
+    s1_context = f"{identity}\n\nWEB RESEARCH — Model Year Info:\n{model_year_research or 'No web research data available for this model year.'}"
+
+    # Section 2: Vehicle History — gets NHTSA data ONLY (no web research to hallucinate from)
+    s2_parts = [identity]
     if nhtsa_data:
         n = nhtsa_data
-        context_parts.append(f"\nNHTSA SAFETY DATA (for {v.get('year','')} {v.get('make','')} {v.get('model','')} MODEL YEAR — not VIN-specific):")
-        context_parts.append(f"  NOTE: These are recalls/complaints for ALL {v.get('year','')} {v.get('make','')} {v.get('model','')} vehicles, not confirmed for this specific VIN.")
-        context_parts.append(f"  Risk score: {n['risk_score']}/10 ({n['risk_label']})")
-        context_parts.append(f"  Recalls for model year: {n['recall_count']} (recalls = FREE manufacturer fixes)")
-        context_parts.append(f"  Complaints for model year: {n['complaint_count']} total filed")
+        s2_parts.append(f"\nNHTSA DATA for {year} {make} {model} MODEL YEAR:")
+        s2_parts.append(f"  Recalls: {n['recall_count']}")
+        s2_parts.append(f"  Complaints: {n['complaint_count']}")
+        s2_parts.append(f"  Risk Score: {n['risk_score']}/10 ({n['risk_label']})")
+        for r in n.get("recalls", [])[:8]:
+            s2_parts.append(f"  RECALL [{r['component']}]: {r['summary'][:300]}")
+            if r.get("remedy"): s2_parts.append(f"    FIX: {r['remedy'][:200]}")
         if n.get("top_complaint_areas"):
             areas = ", ".join(f"{a} ({c})" for a, c in n["top_complaint_areas"][:8])
-            context_parts.append(f"  Breakdown: {areas}")
-        for r in n.get("recalls", [])[:5]:
-            context_parts.append(f"  RECALL [{r['component']}]: {r['summary'][:200]}")
-            if r.get("remedy"): context_parts.append(f"    FIX: {r['remedy'][:150]}")
-        # Include actual complaint descriptions for the AI to reference
+            s2_parts.append(f"  Complaint breakdown: {areas}")
         for c in n.get("complaints_raw", [])[:8]:
             summary = str(c.get("summary", ""))[:200]
             comp = c.get("components", "")
             if summary:
-                context_parts.append(f"  COMPLAINT [{comp}]: {summary}")
+                s2_parts.append(f"  COMPLAINT [{comp}]: {summary}")
+    else:
+        s2_parts.append("\nNo NHTSA data available.")
+    s2_context = "\n".join(s2_parts)
 
-    # DEALER REVIEWS
-    if dealer_rep and dealer_rep.get("raw_reviews"):
-        context_parts.append(f"\nDEALER REVIEWS ({dealer_rep['source_count']} sources):")
-        for i, review in enumerate(dealer_rep["raw_reviews"][:3]):
-            context_parts.append(f"  Review {i+1}: {review[:400]}")
+    # Section 3: Price Analysis — gets market data ONLY
+    s3_parts = [identity]
+    if market_data:
+        m = market_data
+        s3_parts.append(f"\nMARKET DATA ({m['comp_count']} comparable listings within 50 miles):")
+        s3_parts.append(f"  This car's price: ${v.get('price', 'unknown'):,}" if isinstance(v.get('price'), (int, float)) else f"  This car's price: {v.get('price', 'unknown')}")
+        s3_parts.append(f"  Median: ${m['median_price']:,}  |  Average: ${m['avg_price']:,}")
+        s3_parts.append(f"  Range: ${m['min_price']:,} - ${m['max_price']:,}")
+        if m.get('percentile') is not None:
+            s3_parts.append(f"  Percentile: {m['percentile']}th (lower = cheaper)")
+        if m.get('savings') is not None:
+            if m['savings'] > 0:
+                s3_parts.append(f"  >>> ${m['savings']:,} BELOW median <<<")
+            elif m['savings'] < 0:
+                s3_parts.append(f"  >>> ${abs(m['savings']):,} ABOVE median <<<")
+        if m.get('deal_score'):
+            s3_parts.append(f"  Deal score: {m['deal_score']}/10")
+        s3_parts.append(f"  Total supply: {m['total_market']} similar vehicles on market")
+        if m.get('mileage_prices') and v.get('mileage'):
+            similar = [x for x in m['mileage_prices'] if abs(x['mileage'] - v['mileage']) < 20000]
+            if similar:
+                sp = [x['price'] for x in similar]
+                s3_parts.append(f"  Similar-mileage comps: avg ${sum(sp)//len(sp):,} ({len(sp)} listings)")
+    else:
+        s3_parts.append("\nNo market comparison data available within 50 miles.")
+    if v.get('mileage'):
+        s3_parts.append(f"  This car's mileage: {v['mileage']:,}" if isinstance(v['mileage'], (int, float)) else f"  This car's mileage: {v['mileage']}")
+    s3_context = "\n".join(s3_parts)
 
-    # WEB RESEARCH ÃÂ¢ÃÂÃÂ model-specific intelligence from the internet
-    if web_research:
-        context_parts.append(f"\nWEB RESEARCH ÃÂ¢ÃÂÃÂ Known issues and owner feedback for this vehicle:")
-        context_parts.append(web_research[:4000])
+    # Section 4: Owner Feedback — gets ONLY owner research (the gatekeeper)
+    s4_context = f"{identity}\n\nWEB RESEARCH — Owner Feedback (use ONLY this data):\n{owner_research or 'NO OWNER RESEARCH DATA AVAILABLE. You must return the limited-data fallback response.'}"
 
-    # RAW LISTING
-    if listing_text:
-        context_parts.append(f"\nLISTING PAGE CONTENT:")
-        context_parts.append(listing_text[:3000])
+    # Section 5: Dealer Questions — gets ALL data for smart synthesis
+    s5_parts = [identity]
+    if nhtsa_data and nhtsa_data.get("recall_count", 0) > 0:
+        s5_parts.append(f"\nRECALLS: {nhtsa_data['recall_count']} recalls for this model year")
+        for r in nhtsa_data.get("recalls", [])[:5]:
+            s5_parts.append(f"  - {r['component']}: {r['summary'][:150]}")
+    if market_data:
+        s5_parts.append(f"\nPRICE: Listed at ${v.get('price', '?')}, median is ${market_data['median_price']:,}")
+    if v.get('mileage'):
+        s5_parts.append(f"MILEAGE: {v['mileage']:,} miles" if isinstance(v['mileage'], (int, float)) else f"MILEAGE: {v['mileage']}")
+    if dealer_research:
+        s5_parts.append(f"\nWEB RESEARCH — Known issues & buying tips:\n{dealer_research}")
+    s5_context = "\n".join(s5_parts)
 
-    context = "\n".join(context_parts)
+    # =====================================================
+    # PHASE 3: Parallel section generation (5 LLM calls)
+    # =====================================================
+    log.info(f"Pipeline Phase 3: Generating 5 sections in parallel for {vehicle_str}")
 
-    user_msg = f"""Generate a buyer intelligence report for this vehicle.
+    sections = {}
+    section_configs = [
+        ("model_year_summary", s1_context),
+        ("vehicle_history", s2_context),
+        ("price_analysis", s3_context),
+        ("owner_feedback", s4_context),
+        ("dealer_questions", s5_context),
+    ]
 
-RULES:
-- Every answer must name the specific car ({v.get('year', '?')} {v.get('make', '?')} {v.get('model', '?')}) or its specific components
-- Use web research data to provide REAL generation-specific information
-- ONLY cite numbers, stats, recall IDs, complaint counts, and market data from the DATA CONTEXT below
-- NHTSA data is for the MODEL YEAR, not this VIN. Frame as "X recalls exist for the [year] [make] [model] model year. Check this VIN at nhtsa.gov/recalls."
-- If NHTSA data shows 0 recalls and 0 complaints, say exactly that
-- No generic advice — everything must be specific to this car
-- Keep it concise and helpful — buyers want quick intel, not essays
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
+        futures = {}
+        for section_name, context in section_configs:
+            futures[ex.submit(generate_section, section_name, vehicle_info, context)] = section_name
 
-{context}
+        for future in concurrent.futures.as_completed(futures):
+            section_name = futures[future]
+            try:
+                result = future.result()
+                if result:
+                    sections[section_name] = result
+                    log.info(f"Section {section_name}: generated OK")
+                else:
+                    log.warning(f"Section {section_name}: returned None")
+                    sections[section_name] = {"error": "Section generation failed"}
+            except Exception as e:
+                log.error(f"Section {section_name} error: {e}")
+                sections[section_name] = {"error": str(e)}
 
-Return the JSON analysis matching this schema:
-{ANALYSIS_JSON_SCHEMA}"""
+    # =====================================================
+    # PHASE 4: Overall score (quick final LLM call)
+    # =====================================================
+    log.info(f"Pipeline Phase 4: Generating overall score for {vehicle_str}")
+    overall = generate_overall_score(vehicle_info, sections)
 
+    # =====================================================
+    # PHASE 5: Assemble final report
+    # =====================================================
+    analysis = {
+        "overall_score": overall,
+        **sections
+    }
 
-    for attempt, max_tok in enumerate([12288, 16384], 1):
-        try:
-            log.info(f"Groq attempt {attempt} with max_tokens={max_tok}")
-            resp = requests.post(GROQ_URL, json={
-                "model": GROQ_MODEL,
-                "messages": [
-                    {"role": "system", "content": ANALYSIS_SYSTEM_PROMPT},
-                    {"role": "user", "content": user_msg}
-                ],
-                "temperature": 0.15,
-                "max_tokens": max_tok,
-                "response_format": {"type": "json_object"}
-            }, headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json"
-            }, timeout=90)
+    log.info(f"Pipeline complete for {vehicle_str}: {len(sections)} sections generated")
+    return analysis
 
-            if resp.status_code == 200:
-                content = resp.json()["choices"][0]["message"]["content"]
-                analysis = json.loads(content)
-                log.info(f"Analysis generated (attempt {attempt}): {v.get('year')} {v.get('make')} {v.get('model')}")
-                return analysis
-            elif resp.status_code == 400 and "json_validate_failed" in resp.text:
-                log.warning(f"JSON truncated at {max_tok} tokens, retrying with more...")
-                continue
-            else:
-                log.error(f"Groq error: {resp.status_code} - {resp.text[:300]}")
-                break
-        except json.JSONDecodeError as e:
-            log.error(f"JSON parse error: {e}")
-            continue
-        except Exception as e:
-            log.error(f"Analysis generation failed: {e}")
-            break
-    return None
 
 
 # ==============================================================
@@ -1156,15 +1625,10 @@ def analyze_listing(input_data):
     if vehicle.get("dealer_name"):
         dealer_rep = get_dealer_reputation(vehicle["dealer_name"], vehicle.get("zip"))
 
-    # === STEP 5: Web research for model-specific intelligence ===
-    web_research = None
-    if vehicle.get("year") and vehicle.get("make") and vehicle.get("model"):
-        web_research = research_vehicle_web(
-            vehicle["year"], vehicle["make"], vehicle["model"], vehicle.get("trim")
-        )
+    # === STEP 5: Web research now handled inside pipeline ===
 
     # === STEP 6: Generate AI analysis ===
-    analysis = generate_analysis(vehicle, market_data, nhtsa_data, dealer_rep, listing_text, vin_decode, web_research)
+    analysis = generate_analysis_pipeline(vehicle, market_data, nhtsa_data, dealer_rep, listing_text, vin_decode)
 
     if not analysis:
         return {"error": "Analysis generation failed. Please try again."}
@@ -1194,7 +1658,7 @@ def analyze_listing(input_data):
         "analysis": analysis,
         "generated_at": datetime.utcnow().isoformat(),
         "report_id": hashlib.md5(json.dumps(vehicle, sort_keys=True, default=str).encode()).hexdigest()[:12],
-        "version": "7.0.0"
+        "version": "9.1.0"
     }
 
 
@@ -1227,7 +1691,7 @@ def api_analyze():
         total_ms = (time.time() - t_start) * 1000
         if "error" in report:
             try:
-                save_trace({"url": data.get("url",""), "error": report["error"], "total_time_ms": total_ms, "prompt_version": "v7"})
+                save_trace({"url": data.get("url",""), "error": report["error"], "total_time_ms": total_ms, "prompt_version": "v9.1"})
             except Exception:
                 pass
             return jsonify(report), 400
@@ -1245,7 +1709,7 @@ def api_analyze():
                 "trim": v.get("trim", ""),
                 "price": v.get("price"),
                 "mileage": v.get("mileage"),
-                "prompt_version": "v9",
+                "prompt_version": "v9.1",
                 "total_time_ms": total_ms,
                 "overall_score": os_data.get("score") if isinstance(os_data, dict) else None,
                 "deal_position": pa_data.get("verdict") if isinstance(pa_data, dict) else None,
@@ -1261,7 +1725,7 @@ def api_analyze():
         log.error(f"Analysis error: {e}")
         total_ms = (time.time() - t_start) * 1000
         try:
-            save_trace({"url": data.get("url",""), "error": str(e), "total_time_ms": total_ms, "prompt_version": "v7"})
+            save_trace({"url": data.get("url",""), "error": str(e), "total_time_ms": total_ms, "prompt_version": "v9.1"})
         except Exception:
             pass
         return jsonify({"error": "Something went wrong. Please try again."}), 500
@@ -1277,7 +1741,7 @@ def api_parse_url():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
-        "status": "ok", "service": "AskCarBuddy", "version": "7.0.0",
+        "status": "ok", "service": "AskCarBuddy", "version": "9.1.0",
         "apis": {"groq": bool(GROQ_API_KEY), "autodev": bool(AUTODEV_API_KEY), "exa": bool(EXA_API_KEY)}
     })
 
